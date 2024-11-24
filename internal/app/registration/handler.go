@@ -17,6 +17,6 @@ func NewRegistrationServerHandler(service Service) *Handler {
 	}
 }
 
-func RegisterRoutes(mux *http.ServeMux, h *Handler) {
-	mux.HandleFunc("/register", h.Register)
+func RegisterUser(mux *http.ServeMux, h *Handler) {
+	mux.HandleFunc("POST /users/register", h.Register)
 }

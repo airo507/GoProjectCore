@@ -1,10 +1,11 @@
-package post
+package comment
 
 import "time"
 
-type Post struct {
+type Messages struct {
 	Id      string    `json:"id"`
 	Author  string    `json:"author_id"`
+	PostId  string    `json:"post_id"`
 	Body    string    `json:"body"`
 	Likes   int       `json:"likes"`
 	Created time.Time `json:"created_at"`

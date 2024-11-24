@@ -1,1 +1,1 @@
-# GoProjectCore
+# https://github.com/airo507/GoProjectCore

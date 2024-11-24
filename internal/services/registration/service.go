@@ -2,6 +2,9 @@ package registration
 
 import "context"
 
+type Service interface {
+}
+
 type RegService struct {
 }
 

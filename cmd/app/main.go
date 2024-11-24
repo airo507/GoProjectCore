@@ -1,40 +1,24 @@
 package main
 
 import (
-	auth "GoProjectCore/internal/app/auth"
-	"GoProjectCore/internal/app/posts"
-	"GoProjectCore/internal/app/registration"
-	authservice "GoProjectCore/internal/services/auth"
-	postsservice "GoProjectCore/internal/services/posts"
-	registrationservice "GoProjectCore/internal/services/registration"
-	"errors"
-	"log"
+	auth2 "github.com/airo507/GoProjectCore/internal/app/auth"
+	"github.com/airo507/GoProjectCore/internal/repository/user"
+	"github.com/airo507/GoProjectCore/internal/services/auth"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 )
 
 func main() {
+	userRepo := user.NewRepository()
+	userService := auth.NewRegistrationService(userRepo)
+	userServer := auth2.NewUserServerImplementation(userService)
 
-	regService := &registrationservice.RegService{}
-	regHandler := registration.NewRegistrationServerHandler(regService)
-	authService := authservice.AuthService{}
-	authHandler := auth.NewAuthorizationServerHandler(authService)
-	postService := postsservice.PostsService{}
-	postsHandler := posts.NewPostsServerHandler(postService)
+	router := chi.NewRouter()
+	router.Use(middleware.Logger)
+	//mux := chi.NewMux()
+	//auth2.RegisterRoutes(mux, userServer)
+	router.Post("/register", userServer.RegisterUser)
 
-	mux := http.NewServeMux()
-
-	registration.RegisterRoutes(mux, regHandler)
-	auth.RegisterRoutes(mux, authHandler)
-	posts.RegisterRoutes(mux, postsHandler)
-
-	server := http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
-	log.Printf("Starting server on %s", server.Addr)
-
-	err := server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("failed to start server: %v", err)
-	}
+	http.ListenAndServe(":8081", router)
 }
