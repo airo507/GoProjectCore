@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	auth2 "github.com/airo507/GoProjectCore/internal/app/auth"
 	"github.com/airo507/GoProjectCore/internal/repository/user"
 	"github.com/airo507/GoProjectCore/internal/services/auth"
@@ -13,6 +14,10 @@ func main() {
 	userRepo := user.NewRepository()
 	userService := auth.NewRegistrationService(userRepo)
 	userServer := auth2.NewUserServerImplementation(userService)
+
+	fmt.Println("test")
+	fmt.Println("test_2")
+	fmt.Println("test_3")
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
