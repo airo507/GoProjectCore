@@ -17,6 +17,7 @@ func main() {
 
 	fmt.Println("test")
 	fmt.Println("test_2")
+	fmt.Println("test_3")
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
