@@ -16,9 +16,11 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
-	//mux := chi.NewMux()
-	//auth2.RegisterRoutes(mux, userServer)
+
 	router.Post("/register", userServer.RegisterUser)
+	router.Get("/login", userServer.Login)
+
+	//router.Group()
 
 	http.ListenAndServe(":8081", router)
 }

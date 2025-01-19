@@ -4,19 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/airo507/GoProjectCore/internal/app/auth"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
+	"github.com/golang-jwt/jwt/v5"
 	"os"
 	"strings"
+	"time"
 )
 
 type UserRepository interface {
-	Register(ctx context.Context, userId string, userData userEntity.UserData) (userEntity.User, error)
-	Login(ctx context.Context, login string, password string) (string, error)
+	Register(ctx context.Context, userId string, userData userEntity.User) (userEntity.User, error)
 }
 
 type Service struct {
 	repo UserRepository
 }
+
+var SecretKey = []byte("secretkey1")
 
 func NewRegistrationService(userRepo UserRepository) *Service {
 	return &Service{
@@ -24,10 +28,19 @@ func NewRegistrationService(userRepo UserRepository) *Service {
 	}
 }
 
-func (s *Service) Register(ctx context.Context, userId string, userInfo userEntity.UserData) error {
+func (s *Service) Register(ctx context.Context, userId string, userInfo auth.ResponseUser) error {
 	fileName := "users.json"
 
-	userCreated, err := s.repo.Register(ctx, userId, userInfo)
+	userData := userEntity.User{
+		Id:        userInfo.UserId,
+		Login:     userInfo.Login,
+		FirstName: userInfo.FirstName,
+		LastName:  userInfo.LastName,
+		Email:     userInfo.Email,
+		Password:  userInfo.Password,
+	}
+
+	userCreated, err := s.repo.Register(ctx, userId, userData)
 
 	err = s.CheckUser(fileName, userCreated)
 	if err != nil {
@@ -50,7 +63,7 @@ func (s *Service) CheckUser(fileName string, userCreated userEntity.User) error 
 	usersFromFiles := s.ReadFile(fileName)
 
 	for _, user := range usersFromFiles {
-		if user.UserData.Login == userCreated.UserData.Login {
+		if user.Login == userCreated.Login && user.Password == userCreated.Password {
 			usersFromFiles = append(usersFromFiles, userCreated)
 			break
 		}
@@ -63,7 +76,7 @@ func (s *Service) CheckUser(fileName string, userCreated userEntity.User) error 
 func (s *Service) WriteToFile(fileName string, userCreated userEntity.User) error {
 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("%s", err)
 	}
 	defer file.Close()
 
@@ -75,7 +88,8 @@ func (s *Service) WriteToFile(fileName string, userCreated userEntity.User) erro
 func (s *Service) ReadFile(fileName string) []userEntity.User {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
-		panic(err)
+		fmt.Errorf("%s", err)
+		return nil
 	}
 
 	strFromFile := string(data)
@@ -85,13 +99,38 @@ func (s *Service) ReadFile(fileName string) []userEntity.User {
 	var usersFromFile []userEntity.User
 	err = decoder.Decode(&usersFromFile)
 	if err != nil {
-		panic(err)
+		fmt.Errorf("%s", err)
+		return nil
 	}
 
 	return usersFromFile
 }
 
-func (s *Service) Login(ctx context.Context, login string, password string) error {
+func (s *Service) checkUsersInFile(fileName string, userData auth.InputUser) error {
+	usersFromFiles := s.ReadFile(fileName)
 
+	for _, user := range usersFromFiles {
+		if user.Login == userData.Login && user.Password == userData.Password {
+			return fmt.Errorf("%s", "User is exist")
+		}
+	}
+	return fmt.Errorf("%s", "User is not exist")
+}
+
+func (s *Service) Login(ctx context.Context, userData auth.InputUser) error {
+	fileName := "users.json"
+	err := s.checkUsersInFile(fileName, userData)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (s *Service) GenerateToken(login string) (string, error) {
+	claims := jwt.MapClaims{
+		"username": login,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(SecretKey)
 }

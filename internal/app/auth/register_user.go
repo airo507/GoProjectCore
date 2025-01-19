@@ -2,20 +2,12 @@ package auth
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/airo507/GoProjectCore/internal/api"
-	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
 	"net/http"
 )
 
 func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
-
-	userId, ok := api.PathValueOrError(w, r, "user_id")
-	if !ok {
-		return
-	}
-	fmt.Println(userId)
 
 	login, ok := api.PathValueOrError(w, r, "login")
 	if !ok {
@@ -38,7 +30,12 @@ func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userData := userEntity.UserData{
+	userId, ok := api.PathValueOrError(w, r, "user_id")
+	if !ok {
+		return
+	}
+
+	userData := ResponseUser{
 		Login:     login,
 		FirstName: firstName,
 		LastName:  lastName,

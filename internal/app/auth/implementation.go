@@ -2,13 +2,12 @@ package auth
 
 import (
 	"context"
-	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
-	"github.com/go-chi/chi/v5"
 )
 
 type AuthService interface {
-	Register(ctx context.Context, userId string, user userEntity.UserData) error
-	Login(ctx context.Context, login string, password string) error
+	Register(ctx context.Context, userId string, user ResponseUser) error
+	Login(ctx context.Context, userData InputUser) error
+	GenerateToken(login string) (string, error)
 }
 
 type Implementation struct {
@@ -21,6 +20,6 @@ func NewUserServerImplementation(authService AuthService) *Implementation {
 	}
 }
 
-func RegisterRoutes(mux *chi.Mux, i *Implementation) {
-	mux.Post("/register", i.RegisterUser)
-}
+//func RegisterRoutes(mux *chi.Mux, i *Implementation) {
+//	mux.Post("/register", i.RegisterUser)
+//}

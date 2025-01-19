@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"fmt"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
 	"time"
 )
@@ -18,7 +17,7 @@ func NewRepository() *Repository {
 	}
 }
 
-func (r *Repository) Register(ctx context.Context, userId string, userData userEntity.UserData) (userEntity.User, error) {
+func (r *Repository) Register(ctx context.Context, userId string, userData userEntity.User) (userEntity.User, error) {
 	select {
 	case <-ctx.Done():
 		return userEntity.User{}, ctx.Err()
@@ -26,28 +25,14 @@ func (r *Repository) Register(ctx context.Context, userId string, userData userE
 	}
 
 	r.data[userId] = userEntity.User{
-		Id:        userId,
-		UserData:  userData,
+		Login:     userData.Login,
+		FirstName: userData.FirstName,
+		LastName:  userData.LastName,
+		Email:     userData.Email,
+		Password:  userData.Password,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
 
 	return r.data[userId], nil
-}
-
-func (r *Repository) Login(ctx context.Context, login string, password string) (string, error) {
-	select {
-	case <-ctx.Done():
-		return "", ctx.Err()
-	default:
-	}
-
-	for _, v := range r.data {
-		if v.UserData.Login == login && v.UserData.Password == password {
-			return fmt.Sprintf("User %s is authorized", login), nil
-		} else {
-			return "", fmt.Errorf("User %s not found!", login)
-		}
-	}
-	return fmt.Sprintf("User %s is login", login), nil
 }

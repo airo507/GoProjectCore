@@ -9,7 +9,8 @@ import (
 func PathValueOrError(w http.ResponseWriter, r *http.Request, name string) (string, bool) {
 	w.Header().Set("Content-Type", "application/json")
 
-	value := r.PathValue(name)
+	value := r.FormValue(name)
+	fmt.Println(value)
 	if value == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(DefaultResponse{
