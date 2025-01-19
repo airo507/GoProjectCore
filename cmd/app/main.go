@@ -16,7 +16,6 @@ func main() {
 	userServer := auth2.NewUserServerImplementation(userService)
 
 	fmt.Println("test")
-	fmt.Println("test_2")
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
