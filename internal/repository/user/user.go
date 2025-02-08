@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
 	"time"
 )
@@ -35,4 +36,12 @@ func (r *Repository) Register(ctx context.Context, userId string, userData userE
 	}
 
 	return r.data[userId], nil
+}
+
+func (r *Repository) Get(userId string) error {
+	_, ok := r.data[userId]
+	if ok {
+		return nil
+	}
+	return fmt.Errorf("User %s not found", userId)
 }

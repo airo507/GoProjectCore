@@ -1,10 +1,10 @@
-package auth
+package user
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/airo507/GoProjectCore/internal/app/auth"
+	"github.com/airo507/GoProjectCore/internal/app/user"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
 	"github.com/golang-jwt/jwt/v5"
 	"os"
@@ -14,13 +14,14 @@ import (
 
 type UserRepository interface {
 	Register(ctx context.Context, userId string, userData userEntity.User) (userEntity.User, error)
+	Get(userId string) error
 }
 
 type Service struct {
 	repo UserRepository
 }
 
-var SecretKey = []byte("secretkey1")
+//var SecretKey = []byte("secretkey1")
 
 func NewRegistrationService(userRepo UserRepository) *Service {
 	return &Service{
@@ -28,7 +29,7 @@ func NewRegistrationService(userRepo UserRepository) *Service {
 	}
 }
 
-func (s *Service) Register(ctx context.Context, userId string, userInfo auth.ResponseUser) error {
+func (s *Service) Register(ctx context.Context, userId string, userInfo user.ResponseUser) error {
 	fileName := "users.json"
 
 	userData := userEntity.User{
@@ -106,7 +107,7 @@ func (s *Service) ReadFile(fileName string) []userEntity.User {
 	return usersFromFile
 }
 
-func (s *Service) checkUsersInFile(fileName string, userData auth.InputUser) error {
+func (s *Service) checkUsersInFile(fileName string, userData user.InputUser) error {
 	usersFromFiles := s.ReadFile(fileName)
 
 	for _, user := range usersFromFiles {
@@ -117,7 +118,7 @@ func (s *Service) checkUsersInFile(fileName string, userData auth.InputUser) err
 	return fmt.Errorf("%s", "User is not exist")
 }
 
-func (s *Service) Login(ctx context.Context, userData auth.InputUser) error {
+func (s *Service) Login(ctx context.Context, userData user.InputUser) error {
 	fileName := "users.json"
 	err := s.checkUsersInFile(fileName, userData)
 	if err != nil {

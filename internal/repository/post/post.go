@@ -4,63 +4,60 @@ import (
 	"context"
 	"fmt"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
-	"reflect"
 )
-
-type PostRepository interface {
-	Create(ctx context.Context, post postEntity.Post) (string, error)
-	Update(ctx context.Context, postId string, postFields map[string]interface{}) (string, error)
-	Delete(ctx context.Context, postId string) (string, error)
-	GetPostsByUserId(ctx context.Context, userId string) ([]postEntity.Post, error)
-	GetPostById(ctx context.Context, postId string) (postEntity.Post, error)
-	GetPosts(ctx context.Context) (map[string]postEntity.Post, error)
-	GetPostLikes(ctx context.Context, postId string) (int, error)
-}
 
 type Repository struct {
 	data map[string]postEntity.Post
 }
 
-func newRepository() *Repository {
+func NewPostRepository() *Repository {
 	return &Repository{
 		data: make(map[string]postEntity.Post),
 	}
 }
 
-func (r *Repository) Create(ctx context.Context, post postEntity.Post) (string, error) {
+func (r *Repository) Create(ctx context.Context, post postEntity.Post) error {
 	select {
 	case <-ctx.Done():
-		return "", ctx.Err()
+		return ctx.Err()
 	default:
 	}
 
 	r.data[post.Id] = post
-	return fmt.Sprintf("Post %s created.", post.Id), nil
+	return nil
 }
 
-func (r *Repository) Update(ctx context.Context, postId string, postFields map[string]interface{}) (string, error) {
+func (*Repository) Update(key string, value interface{}, post postEntity.Post) error {
+	switch key {
+	case "Id":
+		if v, ok := value.(string); ok {
+			post.Id = v
+			return nil
+		}
+	case "Author":
+		if v, ok := value.(string); ok {
+			post.Author = v
+			return nil
+		}
+	case "Body":
+		if v, ok := value.(string); ok {
+			post.Author = v
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid type for field %s", key)
+}
+
+func (r *Repository) Delete(ctx context.Context, postId string) error {
 	select {
 	case <-ctx.Done():
-		return "", ctx.Err()
+		return ctx.Err()
 	default:
 	}
 
-	post, _ := r.GetPostById(ctx, postId)
-
-	postVal := reflect.ValueOf(&post).Elem()
-	typeVal := reflect.TypeOf(post)
-
-	for i := 0; i < postVal.NumField(); i++ {
-		fieldName := typeVal.Field(i).Name
-		field := postVal.Field(i)
-
-		if val, exist := postFields[fieldName]; exist {
-			if reflect.ValueOf(val).Kind() == field.Kind() {
-				field.Set(reflect.ValueOf(val))
-			}
-		}
-	}
-	return fmt.Sprintf("Post is updated: %w", postId), nil
+	posts, _ := r.GetPosts(ctx)
+	delete(posts, postId)
+	return nil
 }
 
 func (r *Repository) GetPosts(ctx context.Context) (map[string]postEntity.Post, error) {
@@ -98,7 +95,7 @@ func (r *Repository) GetPostsByUserId(ctx context.Context, userId string) ([]pos
 
 	posts, _ := r.GetPosts(ctx)
 
-	usersPosts := []postEntity.Post{}
+	var usersPosts []postEntity.Post
 	for _, value := range posts {
 		if value.Author == userId {
 			usersPosts = append(usersPosts, value)

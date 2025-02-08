@@ -1,4 +1,4 @@
-package auth
+package user
 
 type InputUser struct {
 	Login    string `json:"login"`

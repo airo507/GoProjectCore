@@ -1,4 +1,4 @@
-package auth
+package user
 
 import (
 	"encoding/json"
@@ -29,7 +29,6 @@ func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-
 	userId, ok := api.PathValueOrError(w, r, "user_id")
 	if !ok {
 		return

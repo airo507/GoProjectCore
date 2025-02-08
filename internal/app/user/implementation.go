@@ -1,4 +1,4 @@
-package auth
+package user
 
 import (
 	"context"
@@ -19,7 +19,3 @@ func NewUserServerImplementation(authService AuthService) *Implementation {
 		service: authService,
 	}
 }
-
-//func RegisterRoutes(mux *chi.Mux, i *Implementation) {
-//	mux.Post("/register", i.RegisterUser)
-//}
