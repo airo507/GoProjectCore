@@ -7,7 +7,6 @@ type Messages struct {
 	Author  string    `json:"author_id"`
 	PostId  string    `json:"post_id"`
 	Body    string    `json:"body"`
-	Likes   int       `json:"likes"`
 	Created time.Time `json:"created_at"`
 	Updated time.Time `json:"updated_at"`
 }
