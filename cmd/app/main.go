@@ -1,31 +1,31 @@
 package main
 
 import (
-	"fmt"
+	"github.com/airo507/GoProjectCore/internal/app/user"
 	"github.com/airo507/GoProjectCore/internal/config"
+	"github.com/airo507/GoProjectCore/internal/repository"
 	"github.com/airo507/GoProjectCore/internal/storage/sqlite"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"log/slog"
 )
 
 func main() {
 	env := config.GetConfig()
 	dbName := env.StoragePath
-	db, err := sqlite.CreateTables(dbName)
+	db, err := sqlite.New(dbName)
 	if err != nil {
-		_ = fmt.Errorf("%s", err)
+		slog.Error("Create new database failed!", err)
 	}
-	fmt.Println(db)
-	//userRepo := user.NewRepository()
-	//userS := userService.NewRegistrationService(userRepo)
-	//userServer := userApp.NewUserServerImplementation(userS)
-	//postRepo := post.NewPostRepository()
-	//postS := post2.NewPostService(postRepo)
-	//postServer := post3.NewPostImplementation(postS)
+
+	repos := repository.NewRepository(db)
+	service := service.NewService(repos)
+
+	router := chi.NewRouter()
+	router.Use(middleware.Logger)
 	//
-	//router := chi.NewRouter()
-	//router.Use(middleware.Logger)
-	//
-	//router.Post("/register", userServer.RegisterUser)
-	//router.Get("/login", userServer.Login)
+	router.Post("/register", user.Login)
+	router.Get("/login", userServer.Login)
 
 	//router.Group()
 

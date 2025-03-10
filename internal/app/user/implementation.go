@@ -14,8 +14,6 @@ type Implementation struct {
 	service AuthService
 }
 
-func NewUserServerImplementation(authService AuthService) *Implementation {
-	return &Implementation{
-		service: authService,
-	}
+func NewUserImp() *Implementation {
+	return &Implementation{}
 }

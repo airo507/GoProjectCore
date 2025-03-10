@@ -2,136 +2,95 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/airo507/GoProjectCore/internal/app/user"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
+	userRepository "github.com/airo507/GoProjectCore/internal/repository/user"
 	"github.com/golang-jwt/jwt/v5"
-	"os"
-	"strings"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
-type UserRepository interface {
-	Register(ctx context.Context, userId string, userData userEntity.User) (userEntity.User, error)
-	Get(userId string) error
+type Authorization interface {
+	Register(ctx context.Context, userInfo user.ResponseUser) (int64, error)
+	Login(ctx context.Context, userData user.InputUser) error
 }
 
-type Service struct {
-	repo UserRepository
+type UserService struct {
+	repo userRepository.Userable
 }
+
+const (
+	secretKey = "asdfasfil241234nklasdf"
+)
 
 //var SecretKey = []byte("secretkey1")
 
-func NewRegistrationService(userRepo UserRepository) *Service {
-	return &Service{
-		repo: userRepo,
+func NewUserService(userRepository userRepository.Userable) *UserService {
+	return &UserService{
+		repo: userRepository,
 	}
 }
 
-func (s *Service) Register(ctx context.Context, userId string, userInfo user.ResponseUser) error {
-	fileName := "users.json"
+func (s *UserService) Register(ctx context.Context, userInfo user.ResponseUser) (int64, error) {
 
+	hashPassword, err := HashPassword(userInfo.Password)
+	if err != nil {
+		return 0, fmt.Errorf("Error hashing password: %v", err)
+	}
 	userData := userEntity.User{
 		Id:        userInfo.UserId,
 		Login:     userInfo.Login,
 		FirstName: userInfo.FirstName,
 		LastName:  userInfo.LastName,
 		Email:     userInfo.Email,
-		Password:  userInfo.Password,
+		Password:  hashPassword,
 	}
 
-	userCreated, err := s.repo.Register(ctx, userId, userData)
-
-	err = s.CheckUser(fileName, userCreated)
+	userCreated, err := s.repo.Create(ctx, userData)
 	if err != nil {
-		fmt.Println("Can't register user!")
+		return 0, fmt.Errorf("Failed to create user: %w", err)
 	}
-	return err
+
+	return userCreated, err
 }
 
-func (s *Service) CheckUser(fileName string, userCreated userEntity.User) error {
-
-	file, err := os.OpenFile(fileName, os.O_RDWR, 0644)
+func (s *UserService) Login(ctx context.Context, input user.InputUser) error {
+	checkUser, err := s.repo.Get(ctx, input.Login)
 	if err != nil {
-		fmt.Println("File not exist")
-		if os.IsNotExist(err) {
-			err = s.WriteToFile(fileName, userCreated)
-		}
+		return fmt.Errorf("User not find: %w", err)
 	}
-	defer file.Close()
-
-	usersFromFiles := s.ReadFile(fileName)
-
-	for _, user := range usersFromFiles {
-		if user.Login == userCreated.Login && user.Password == userCreated.Password {
-			usersFromFiles = append(usersFromFiles, userCreated)
-			break
-		}
-	}
-
-	file.Close()
-	return nil
-}
-
-func (s *Service) WriteToFile(fileName string, userCreated userEntity.User) error {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return fmt.Errorf("%s", err)
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.Encode(userCreated)
-	return nil
-}
-
-func (s *Service) ReadFile(fileName string) []userEntity.User {
-	data, err := os.ReadFile(fileName)
-	if err != nil {
-		fmt.Errorf("%s", err)
+	if CheckPassword(input.Password, checkUser.Password) {
 		return nil
 	}
+	return fmt.Errorf("User not find")
+}
 
-	strFromFile := string(data)
-	reader := strings.NewReader(strFromFile)
-	decoder := json.NewDecoder(reader)
-
-	var usersFromFile []userEntity.User
-	err = decoder.Decode(&usersFromFile)
+func HashPassword(password string) (string, error) {
+	bytePass := []byte(password)
+	hash, err := bcrypt.GenerateFromPassword(bytePass, bcrypt.DefaultCost)
 	if err != nil {
-		fmt.Errorf("%s", err)
-		return nil
+		return "", err
 	}
-
-	return usersFromFile
+	return string(hash), nil
 }
 
-func (s *Service) checkUsersInFile(fileName string, userData user.InputUser) error {
-	usersFromFiles := s.ReadFile(fileName)
-
-	for _, user := range usersFromFiles {
-		if user.Login == userData.Login && user.Password == userData.Password {
-			return fmt.Errorf("%s", "User is exist")
-		}
-	}
-	return fmt.Errorf("%s", "User is not exist")
+func CheckPassword(password string, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }
 
-func (s *Service) Login(ctx context.Context, userData user.InputUser) error {
-	fileName := "users.json"
-	err := s.checkUsersInFile(fileName, userData)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+func (s *UserService) GenerateJwt(login string) (string, error) {
 
-func (s *Service) GenerateToken(login string) (string, error) {
 	claims := jwt.MapClaims{
 		"username": login,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(SecretKey)
+	tokenString, err := token.SignedString(secretKey)
+	if err != nil {
+		return "", fmt.Errorf("Error signing token: %v", err)
+	}
+
+	return tokenString, nil
 }

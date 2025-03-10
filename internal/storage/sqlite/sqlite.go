@@ -6,20 +6,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Storage struct {
-	db *sql.DB
-}
-
-func CreateTables(database string) (*Storage, error) {
+func New(database string) (*sql.DB, error) {
 
 	db, err := sql.Open("sqlite3", database)
 
 	if err != nil {
-		fmt.Println("Error opening database %s", err)
+		fmt.Printf("Error opening database %s\n", err)
 		return nil, fmt.Errorf("%s", err)
 	}
 	defer db.Close()
-	//transaction, err := db.Begin()
 
 	query := []string{
 		`CREATE TABLE IF NOT EXISTS user
@@ -62,5 +57,5 @@ func CreateTables(database string) (*Storage, error) {
 		fmt.Println("Tables created!")
 	}
 
-	return &Storage{db: db}, nil
+	return db, nil
 }
