@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (i *Implementation) Login(w http.ResponseWriter, r *http.Request) {
+func (i *UserImplementation) Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	login, ok := api.PathValueOrError(w, r, "login")
@@ -24,7 +24,7 @@ func (i *Implementation) Login(w http.ResponseWriter, r *http.Request) {
 		Password: pass,
 	}
 
-	err := i.service.Login(r.Context(), userData)
+	_, err := i.service.Login(r.Context(), userData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

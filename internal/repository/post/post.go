@@ -45,11 +45,11 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 
 	defer r.storage.Close()
 
-	stmt, err := r.storage.Prepare("INSERT INTO post (author, body, created_at, updated_at) VALUES (?, ?, ?, ?)")
+	stmt, err := r.storage.Prepare("INSERT INTO post (author, body, likes, created_at, updated_at) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return 0, err
 	}
-	res, err := stmt.Exec(post.Author, post.Body, time.Now(), time.Now())
+	res, err := stmt.Exec(post.Author, post.Body, nil, time.Now(), time.Now())
 
 	if err != nil {
 		slog.Error("sql error: ", err)

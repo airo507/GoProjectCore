@@ -1,19 +1,15 @@
 package user
 
 import (
-	"context"
+	"github.com/airo507/GoProjectCore/internal/service/user"
 )
 
-type AuthService interface {
-	Register(ctx context.Context, userId string, user ResponseUser) error
-	Login(ctx context.Context, userData InputUser) error
-	GenerateToken(login string) (string, error)
+type UserImplementation struct {
+	service user.Authorization
 }
 
-type Implementation struct {
-	service AuthService
-}
-
-func NewUserImp() *Implementation {
-	return &Implementation{}
+func NewUserImplementation(service user.Authorization) *UserImplementation {
+	return &UserImplementation{
+		service: service,
+	}
 }
