@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
+func (i *UserImplementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	login, ok := api.PathValueOrError(w, r, "login")
@@ -29,12 +29,8 @@ func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	userId, ok := api.PathValueOrError(w, r, "user_id")
-	if !ok {
-		return
-	}
 
-	userData := ResponseUser{
+	userData := api.ResponseUser{
 		Login:     login,
 		FirstName: firstName,
 		LastName:  lastName,
@@ -42,7 +38,7 @@ func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		Password:  pass,
 	}
 
-	err := i.service.Register(r.Context(), userId, userData)
+	_, err := i.service.Register(r.Context(), userData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -52,4 +48,9 @@ func (i *Implementation) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "User created successfully",
+	})
 }

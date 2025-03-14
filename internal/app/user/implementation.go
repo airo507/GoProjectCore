@@ -1,14 +1,14 @@
 package user
 
 import (
-	"github.com/airo507/GoProjectCore/internal/service/user"
+	"github.com/airo507/GoProjectCore/internal/service"
 )
 
 type UserImplementation struct {
-	service user.Authorization
+	service service.Authorization
 }
 
-func NewUserImplementation(service user.Authorization) *UserImplementation {
+func NewUserImplementation(service service.Authorization) *UserImplementation {
 	return &UserImplementation{
 		service: service,
 	}

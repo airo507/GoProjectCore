@@ -5,20 +5,20 @@ import (
 	"github.com/airo507/GoProjectCore/internal/api"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 func (p *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	id, ok := api.PathValueOrError(w, r, "id")
-	if !ok {
-		return
-	}
-
 	author, ok := api.PathValueOrError(w, r, "author")
 	if !ok {
 		return
+	}
+	authorId, err := strconv.Atoi(author)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	body, ok := api.PathValueOrError(w, r, "body")
@@ -27,15 +27,14 @@ func (p *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postData := postEntity.Post{
-		Id:      id,
-		Author:  author,
+		Author:  authorId,
 		Body:    body,
-		Likes:   0,
+		Likes:   nil,
 		Created: time.Now(),
 		Updated: time.Now(),
 	}
 
-	err := p.service.Create(r.Context(), postData)
+	createdPost, err := p.service.Create(r.Context(), postData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -45,4 +44,7 @@ func (p *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(createdPost)
 }

@@ -1,14 +1,14 @@
 package post
 
 import (
-	"github.com/airo507/GoProjectCore/internal/service/post"
+	"github.com/airo507/GoProjectCore/internal/service"
 )
 
 type PostImplementation struct {
-	service post.Posting
+	service service.Posting
 }
 
-func NewPostImplementation(service post.Posting) *PostImplementation {
+func NewPostImplementation(service service.Posting) *PostImplementation {
 	return &PostImplementation{
 		service: service,
 	}

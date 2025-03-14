@@ -2,25 +2,16 @@ package post
 
 import (
 	"context"
+	"github.com/airo507/GoProjectCore/internal/api"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
-	"github.com/airo507/GoProjectCore/internal/repository/post"
+	"github.com/airo507/GoProjectCore/internal/repository"
 )
 
-type Posting interface {
-	Create(ctx context.Context, post postEntity.Post) (int64, error)
-	Update(ctx context.Context, postId int, postFields post.PostInput) error
-	Delete(ctx context.Context, postId int) error
-	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
-	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
-	GetPostRating(ctx context.Context, postId int) (int, error)
-	GetPostList(ctx context.Context) (map[int]postEntity.Post, error)
-}
-
 type PostService struct {
-	repo post.Postable
+	repo repository.Postable
 }
 
-func NewPostService(postRepo post.Postable) *PostService {
+func NewPostService(postRepo repository.Postable) *PostService {
 	return &PostService{
 		repo: postRepo,
 	}
@@ -36,7 +27,7 @@ func (s *PostService) Create(ctx context.Context, post postEntity.Post) (int64, 
 	return createdPostId, nil
 }
 
-func (s *PostService) Update(ctx context.Context, postId int, postFields post.PostInput) error {
+func (s *PostService) Update(ctx context.Context, postId int, postFields api.PostInput) error {
 
 	err := s.repo.Update(ctx, postId, postFields)
 	if err != nil {
@@ -80,10 +71,10 @@ func (s *PostService) GetPostList(ctx context.Context) (map[int]postEntity.Post,
 	return posts, nil
 }
 
-func (s *PostService) GetPostRating(ctx context.Context, postId int) (int, error) {
+func (s *PostService) GetPostRating(ctx context.Context, postId int) (*int, error) {
 	likes, err := s.repo.GetPostLikes(ctx, postId)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	return likes, nil
 }

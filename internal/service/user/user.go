@@ -3,35 +3,30 @@ package user
 import (
 	"context"
 	"fmt"
-	"github.com/airo507/GoProjectCore/internal/app/user"
+	"github.com/airo507/GoProjectCore/internal/api"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
-	userRepository "github.com/airo507/GoProjectCore/internal/repository/user"
+	"github.com/airo507/GoProjectCore/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"time"
 )
 
-type Authorization interface {
-	Register(ctx context.Context, userInfo user.ResponseUser) (int64, error)
-	Login(ctx context.Context, userData user.InputUser) (string, error)
-}
-
 type UserService struct {
-	repo userRepository.Userable
+	repo repository.Userable
 }
 
 const (
 	secretKey = "secretkey1"
 )
 
-func NewUserService(userRepository userRepository.Userable) *UserService {
+func NewUserService(userRepository repository.Userable) *UserService {
 	return &UserService{
 		repo: userRepository,
 	}
 }
 
-func (s *UserService) Register(ctx context.Context, userInfo user.ResponseUser) (int64, error) {
+func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (int64, error) {
 
 	hashPassword, err := s.HashPassword(userInfo.Password)
 	if err != nil {
@@ -46,6 +41,14 @@ func (s *UserService) Register(ctx context.Context, userInfo user.ResponseUser) 
 		Password:  hashPassword,
 	}
 
+	checkUser, err := s.repo.Get(ctx, userData.Login)
+	if err != nil {
+		return 0, fmt.Errorf("Error checking user: %v", err)
+	}
+	if checkUser.Login == userInfo.Login {
+		return 0, fmt.Errorf("User already exists")
+	}
+
 	userCreated, err := s.repo.Create(ctx, userData)
 	if err != nil {
 		return 0, fmt.Errorf("Failed to create user: %w", err)
@@ -54,13 +57,16 @@ func (s *UserService) Register(ctx context.Context, userInfo user.ResponseUser) 
 	return userCreated, err
 }
 
-func (s *UserService) Login(ctx context.Context, input user.InputUser) (string, error) {
+func (s *UserService) Login(ctx context.Context, input api.InputUser) (string, error) {
 	checkUser, err := s.repo.Get(ctx, input.Login)
 	if err != nil {
 		return "", fmt.Errorf("User not find: %w", err)
 	}
 	if !s.CheckPassword(input.Password, checkUser.Password) {
 		return "", fmt.Errorf("Invalid password or login")
+	}
+	if checkUser.Login != input.Login {
+		return "", fmt.Errorf("Invalid login")
 	}
 	token, err := s.GenerateJwt(input.Login)
 

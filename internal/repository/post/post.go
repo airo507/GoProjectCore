@@ -4,30 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/airo507/GoProjectCore/internal/api"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
 	"log/slog"
 	"strings"
 	"time"
 )
 
-type Postable interface {
-	Create(ctx context.Context, post postEntity.Post) (int64, error)
-	Update(ctx context.Context, postId int, input PostInput) error
-	Delete(ctx context.Context, postId int) error
-	GetPosts(ctx context.Context) (map[int]postEntity.Post, error)
-	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
-	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
-	GetPostLikes(ctx context.Context, postId int) (int, error)
-}
-
 type PostRepo struct {
 	storage *sql.DB
-}
-
-type PostInput struct {
-	Author *string `json:"author"`
-	Body   *string `json:"body"`
-	Likes  *int    `json:"likes"`
 }
 
 func NewPostRepo(storage *sql.DB) *PostRepo {
@@ -64,7 +49,7 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 	return id, nil
 }
 
-func (r *PostRepo) Update(ctx context.Context, postId int, input PostInput) error {
+func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -218,16 +203,16 @@ func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEnti
 	return posts, nil
 }
 
-func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (int, error) {
+func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (*int, error) {
 	select {
 	case <-ctx.Done():
-		return 0, ctx.Err()
+		return nil, ctx.Err()
 	default:
 	}
 
 	post, err := r.GetPostById(ctx, postId)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get post likes: %v", err)
+		return nil, fmt.Errorf("failed to get post likes: %v", err)
 	}
 	likes := post.Likes
 

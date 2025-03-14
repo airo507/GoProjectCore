@@ -9,11 +9,6 @@ import (
 	"time"
 )
 
-type Userable interface {
-	Create(ctx context.Context, userData userEntity.User) (int64, error)
-	Get(ctx context.Context, login string) (userEntity.User, error)
-}
-
 type UserRepo struct {
 	storage *sql.DB
 }

@@ -19,12 +19,12 @@ func (i *UserImplementation) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userData := InputUser{
+	userData := api.InputUser{
 		Login:    login,
 		Password: pass,
 	}
 
-	_, err := i.service.Login(r.Context(), userData)
+	token, err := i.service.Login(r.Context(), userData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -34,5 +34,6 @@ func (i *UserImplementation) Login(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	json.NewEncoder(w).Encode(api.LoginResponse{AccessToken: token})
 
 }

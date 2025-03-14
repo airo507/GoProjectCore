@@ -1,4 +1,4 @@
-package user
+package api
 
 type InputUser struct {
 	Login    string `json:"login"`

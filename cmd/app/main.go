@@ -4,11 +4,12 @@ import (
 	"github.com/airo507/GoProjectCore/internal/app"
 	"github.com/airo507/GoProjectCore/internal/config"
 	"github.com/airo507/GoProjectCore/internal/repository"
-	service2 "github.com/airo507/GoProjectCore/internal/service"
+	"github.com/airo507/GoProjectCore/internal/service"
 	"github.com/airo507/GoProjectCore/internal/storage/sqlite"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
+	"net/http"
 )
 
 func main() {
@@ -20,19 +21,25 @@ func main() {
 	}
 
 	repos := repository.NewRepository(db)
-	slog.Info("Create new repository", repos)
-	service := service2.NewService(repos)
-	slog.Info("Create new service", service)
-	handlers := app.NewImplementation(service)
+	slog.Info("Create new repository", repos.Post)
+	newService := service.NewService(repos)
+	slog.Info("Create new service", newService)
+	handlers := app.NewImplementation(newService)
 	slog.Info("Create new handlers", handlers)
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 	//
-	//router.Post("/register", user.Login)
-	//router.Get("/login", userServer.Login)
+	//router.Post("/register", handlers.User.RegisterUser)
+	//router.Post("/login", handlers.User.Login)
+	//
+	//router.Group(func(r chi.Router) {
+	//	r.Use(handlers.User.AuthMiddleware)
+	//
+	//})
 
-	//router.Group()
-
-	//http.ListenAndServe(":8081", router)
+	err = http.ListenAndServe(":8081", router)
+	if err != nil {
+		return
+	}
 }
