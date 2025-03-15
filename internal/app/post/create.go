@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/airo507/GoProjectCore/internal/api"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -37,6 +38,7 @@ func (p *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
 	createdPost, err := p.service.Create(r.Context(), postData)
 
 	if err != nil {
+		slog.Error("Error: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{
 			Code:    api.InternalError,

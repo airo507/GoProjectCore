@@ -29,6 +29,7 @@ func NewUserService(userRepository repository.Userable) *UserService {
 func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (int64, error) {
 
 	hashPassword, err := s.HashPassword(userInfo.Password)
+
 	if err != nil {
 		return 0, fmt.Errorf("Error hashing password: %v", err)
 	}
@@ -41,10 +42,12 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 		Password:  hashPassword,
 	}
 
-	checkUser, err := s.repo.Get(ctx, userData.Login)
-	if err != nil {
-		return 0, fmt.Errorf("Error checking user: %v", err)
-	}
+	checkUser, _ := s.repo.Get(ctx, userData.Login)
+	//if err != nil {
+	//	slog.Error("Error checking user", err)
+	//	return 0, fmt.Errorf("Error checking user: %v", err)
+	//}
+
 	if checkUser.Login == userInfo.Login {
 		return 0, fmt.Errorf("User already exists")
 	}

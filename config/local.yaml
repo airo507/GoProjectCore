@@ -1,5 +1,5 @@
 env: "local" #окружение находится локально
-storage_path: "posts.db"
+storage_path: "internal/storage/sqlite/posts.db"
 http_server:
   address: "localhost:8081"
   timeout: 5s

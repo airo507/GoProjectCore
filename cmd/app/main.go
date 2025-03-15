@@ -15,28 +15,32 @@ import (
 func main() {
 	env := config.GetConfig()
 	dbName := env.StoragePath
+	slog.Info(dbName)
 	db, err := sqlite.New(dbName)
 	if err != nil {
 		slog.Error("Create new database failed!", err)
 	}
 
 	repos := repository.NewRepository(db)
-	slog.Info("Create new repository", repos.Post)
 	newService := service.NewService(repos)
-	slog.Info("Create new service", newService)
 	handlers := app.NewImplementation(newService)
-	slog.Info("Create new handlers", handlers)
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
-	//
-	//router.Post("/register", handlers.User.RegisterUser)
-	//router.Post("/login", handlers.User.Login)
-	//
-	//router.Group(func(r chi.Router) {
-	//	r.Use(handlers.User.AuthMiddleware)
-	//
-	//})
+
+	router.Post("/register", handlers.User.RegisterUser)
+	router.Post("/login", handlers.User.Login)
+
+	router.Group(func(r chi.Router) {
+		r.Use(handlers.User.AuthMiddleware)
+		router.Get("/posts", handlers.Post.GetPostList)
+		router.Get("/posts/{post_id}", handlers.Post.GetPostById)
+		router.Get("/posts/{user_id}", handlers.Post.GetPostsListByUserId)
+		router.Get("/posts/rating/{post_id}", handlers.Post.GetPostRating)
+		router.Post("/posts", handlers.Post.Create)
+		router.Patch("/posts/{post_id}", handlers.Post.Update)
+		router.Delete("/posts/{post_id}", handlers.Post.Delete)
+	})
 
 	err = http.ListenAndServe(":8081", router)
 	if err != nil {

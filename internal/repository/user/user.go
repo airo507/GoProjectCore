@@ -26,22 +26,27 @@ func (r *UserRepo) Create(ctx context.Context, userData userEntity.User) (int64,
 	default:
 	}
 
-	defer r.storage.Close()
-
 	stmt, err := r.storage.Prepare("INSERT INTO user (login, first_name, last_name, email, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
+		slog.Error("Prepare statement error:", err)
 		return 0, err
 	}
 	res, err := stmt.Exec(userData.Login, userData.FirstName, userData.LastName, userData.Email, userData.Password, time.Now(), time.Now())
 
 	if err != nil {
-		slog.Error("sql error: ", err)
-		return 0, fmt.Errorf("sql error: %v", err)
+		slog.Error("insert error: ", err)
+		return 0, fmt.Errorf("insert error: %v", err)
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
+		slog.Error("failed create user: ", err)
 		return 0, fmt.Errorf("failed create user: %w", err)
+	}
+
+	err = r.storage.Close()
+	if err != nil {
+		return 0, err
 	}
 
 	return id, nil
@@ -54,9 +59,7 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 	default:
 	}
 
-	defer r.storage.Close()
-
-	stmt, err := r.storage.Prepare("SELECT * FROM users WHERE login=?")
+	stmt, err := r.storage.Prepare("SELECT * FROM user WHERE login=?")
 	if err != nil {
 		return userEntity.User{}, err
 	}

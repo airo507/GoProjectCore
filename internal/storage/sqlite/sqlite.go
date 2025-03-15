@@ -14,7 +14,6 @@ func New(database string) (*sql.DB, error) {
 		fmt.Printf("Error opening database %s\n", err)
 		return nil, fmt.Errorf("%s", err)
 	}
-	defer db.Close()
 
 	query := []string{
 		`CREATE TABLE IF NOT EXISTS user
