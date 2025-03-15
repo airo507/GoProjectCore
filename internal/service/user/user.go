@@ -101,7 +101,7 @@ func (s *UserService) GenerateJwt(login string) (string, error) {
 		"exp":   time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(secretKey)
+	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		slog.Error("Error signing token: %v", err)
 		return "", fmt.Errorf("Error signing token: %v", err)
