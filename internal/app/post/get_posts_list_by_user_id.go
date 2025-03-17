@@ -3,6 +3,7 @@ package post
 import (
 	"encoding/json"
 	"github.com/airo507/GoProjectCore/internal/api"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 )
@@ -10,10 +11,8 @@ import (
 func (p *PostImplementation) GetPostsListByUserId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	id, ok := api.PathValueOrError(w, r, "user_id")
-	if !ok {
-		return
-	}
+	id := chi.URLParam(r, "user_id")
+
 	userId, err := strconv.Atoi(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

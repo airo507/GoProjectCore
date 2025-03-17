@@ -3,6 +3,7 @@ package post
 import (
 	"encoding/json"
 	"github.com/airo507/GoProjectCore/internal/api"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 )
@@ -10,10 +11,8 @@ import (
 func (p *PostImplementation) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	id, ok := api.PathValueOrError(w, r, "id")
-	if !ok {
-		return
-	}
+	id := chi.URLParam(r, "post_id")
+
 	postId, err := strconv.Atoi(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -30,4 +29,7 @@ func (p *PostImplementation) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Post deleted",
+	})
 }

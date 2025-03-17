@@ -30,7 +30,7 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 
 	defer r.storage.Close()
 
-	stmt, err := r.storage.Prepare("INSERT INTO post (author, body, likes, created_at, updated_at) VALUES (?, ?, ?, ?)")
+	stmt, err := r.storage.Prepare("INSERT INTO post (author_id, body, likes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		return 0, err
 	}
@@ -59,7 +59,7 @@ func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) 
 	var setPosts []string
 	var fields []interface{}
 	if input.Author != nil {
-		setPosts = append(setPosts, "author = ?")
+		setPosts = append(setPosts, "author_id = ?")
 		fields = append(fields, *input.Author)
 	}
 	if input.Body != nil {
@@ -74,8 +74,6 @@ func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) 
 	setPosts = append(setPosts, "updated_at = ?")
 	fields = append(fields, time.Now())
 	fields = append(fields, postId)
-
-	defer r.storage.Close()
 
 	query := fmt.Sprintf("UPDATE post SET %s WHERE id = ?", strings.Join(setPosts, ", "))
 
@@ -154,8 +152,6 @@ func (r *PostRepo) GetPostById(ctx context.Context, postId int) (postEntity.Post
 	default:
 	}
 
-	defer r.storage.Close()
-
 	row := r.storage.QueryRow("SELECT * FROM post WHERE id = $1", postId)
 	post := postEntity.Post{}
 	err := row.Scan(
@@ -180,9 +176,7 @@ func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEnti
 	default:
 	}
 
-	defer r.storage.Close()
-
-	row, _ := r.storage.Query("SELECT * FROM post WHERE author = $1", userId)
+	row, _ := r.storage.Query("SELECT * FROM post WHERE author_id = $1", userId)
 	var posts []postEntity.Post
 	for row.Next() {
 		post := postEntity.Post{}

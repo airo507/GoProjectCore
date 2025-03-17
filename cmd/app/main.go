@@ -38,7 +38,7 @@ func main() {
 		r.Use(handlers.User.AuthMiddleware)
 		router.Get("/posts", handlers.Post.GetPostList)
 		router.Get("/posts/{post_id}", handlers.Post.GetPostById)
-		router.Get("/posts/{user_id}", handlers.Post.GetPostsListByUserId)
+		router.Get("/posts/users/{user_id}", handlers.Post.GetPostsListByUserId)
 		router.Get("/posts/rating/{post_id}", handlers.Post.GetPostRating)
 		router.Post("/posts", handlers.Post.Create)
 		router.Patch("/posts/{post_id}", handlers.Post.Update)

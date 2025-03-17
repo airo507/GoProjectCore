@@ -3,6 +3,7 @@ package post
 import (
 	"encoding/json"
 	"github.com/airo507/GoProjectCore/internal/api"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
 )
@@ -10,28 +11,33 @@ import (
 func (p *PostImplementation) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	id, ok := api.PathValueOrError(w, r, "post_id")
-	if !ok {
-		return
-	}
+	id := chi.URLParam(r, "post_id")
+
 	postId, err := strconv.Atoi(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	author, ok := api.PathValueOrError(w, r, "author")
-	if !ok {
+	existPost, err := p.service.GetPostById(r.Context(), postId)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	authorId, err := strconv.Atoi(author)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	author, ok := api.PathValueOrError(w, r, "author")
+	var authorId int
+	if !ok || author == "" {
+		authorId = existPost.Author
+	} else {
+		authorId, err = strconv.Atoi(author)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	}
 
 	body, ok := api.PathValueOrError(w, r, "body")
 	if !ok {
-		return
+		body = existPost.Body
 	}
 
 	postData := api.PostInput{
@@ -50,4 +56,12 @@ func (p *PostImplementation) Update(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message":  "Post updated",
+		"postId":   strconv.Itoa(postId),
+		"authorId": strconv.Itoa(authorId),
+		"body":     body,
+	})
 }

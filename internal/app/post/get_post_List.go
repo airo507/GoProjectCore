@@ -3,7 +3,6 @@ package post
 import (
 	"encoding/json"
 	"github.com/airo507/GoProjectCore/internal/api"
-	"log/slog"
 	"net/http"
 )
 
@@ -12,7 +11,6 @@ func (p *PostImplementation) GetPostList(w http.ResponseWriter, r *http.Request)
 
 	postList, err := p.service.GetPostList(r.Context())
 	if err != nil {
-		slog.Error("GetPostList error:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{
 			Code:    api.NotFound,
