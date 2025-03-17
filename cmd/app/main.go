@@ -10,6 +10,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -46,4 +49,10 @@ func main() {
 	if err != nil {
 		return
 	}
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+
+	slog.Info("Shutting down server...")
 }
