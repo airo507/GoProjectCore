@@ -43,10 +43,6 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 	}
 
 	checkUser, _ := s.repo.Get(ctx, userData.Login)
-	//if err != nil {
-	//	slog.Error("Error checking user", err)
-	//	return 0, fmt.Errorf("Error checking user: %v", err)
-	//}
 
 	if checkUser.Login == userInfo.Login {
 		return 0, fmt.Errorf("User already exists")
@@ -130,4 +126,14 @@ func (s *UserService) CheckToken(tokenString string) (string, error) {
 		return "", fmt.Errorf("Token claims are invalid")
 	}
 	return claims["login"].(string), nil
+}
+
+func (s *UserService) GetUsers(ctx context.Context) ([]userEntity.User, error) {
+	users, err := s.repo.GetUsers(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users: %v", err)
+	}
+
+	return users, nil
 }

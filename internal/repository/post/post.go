@@ -28,8 +28,6 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 	default:
 	}
 
-	defer r.storage.Close()
-
 	stmt, err := r.storage.Prepare("INSERT INTO post (author_id, body, likes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		return 0, err
@@ -96,8 +94,6 @@ func (r *PostRepo) Delete(ctx context.Context, postId int) error {
 		return ctx.Err()
 	default:
 	}
-
-	defer r.storage.Close()
 
 	stmt, err := r.storage.Prepare("DELETE FROM post WHERE id = ?")
 	if err != nil {

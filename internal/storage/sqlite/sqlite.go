@@ -45,6 +45,15 @@ func New(database string) (*sql.DB, error) {
 		    created_at TIMESTAMP NOT NULL,
 		    updated_at TIMESTAMP NOT NULL
 		);`,
+		`CREATE TABLE IF NOT EXISTS comment
+		(
+		    id INTEGER PRIMARY KEY AUTOINCREMENT,
+		    author_id STRING NOT NULL,
+		    post_id STRING NOT NULL,
+		    body STRING NOT NULL,
+		    created_at TIMESTAMP NOT NULL,
+		    updated_at TIMESTAMP NOT NULL
+		);`,
 	}
 
 	for _, stmt := range query {

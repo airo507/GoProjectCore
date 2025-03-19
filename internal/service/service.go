@@ -4,6 +4,7 @@ import (
 	"context"
 	responseUser "github.com/airo507/GoProjectCore/internal/api"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
+	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
 	"github.com/airo507/GoProjectCore/internal/repository"
 	"github.com/airo507/GoProjectCore/internal/service/post"
 	"github.com/airo507/GoProjectCore/internal/service/user"
@@ -13,6 +14,7 @@ type Authorization interface {
 	Register(ctx context.Context, userInfo responseUser.ResponseUser) (int64, error)
 	Login(ctx context.Context, userData responseUser.InputUser) (string, error)
 	CheckToken(tokenString string) (string, error)
+	GetUsers(ctx context.Context) ([]userEntity.User, error)
 }
 
 type Posting interface {

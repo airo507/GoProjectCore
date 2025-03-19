@@ -13,6 +13,7 @@ import (
 type Userable interface {
 	Create(ctx context.Context, userData userEntity.User) (int64, error)
 	Get(ctx context.Context, login string) (userEntity.User, error)
+	GetUsers(ctx context.Context) ([]userEntity.User, error)
 }
 
 type Postable interface {

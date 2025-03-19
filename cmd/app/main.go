@@ -36,6 +36,7 @@ func main() {
 
 	router.Group(func(r chi.Router) {
 		r.Use(handlers.User.AuthMiddleware)
+		router.Get("/users", handlers.User.GetUsers)
 		router.Get("/posts", handlers.Post.GetPostList)
 		router.Get("/posts/{post_id}", handlers.Post.GetPostById)
 		router.Get("/posts/users/{user_id}", handlers.Post.GetPostsListByUserId)

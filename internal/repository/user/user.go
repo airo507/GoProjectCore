@@ -61,7 +61,7 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 
 	stmt, err := r.storage.Prepare("SELECT * FROM user WHERE login=?")
 	if err != nil {
-		return userEntity.User{}, err
+		return userEntity.User{}, fmt.Errorf("prepare statement error: %w", err)
 	}
 
 	var user userEntity.User
@@ -85,4 +85,35 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 	}
 
 	return user, nil
+}
+
+func (r *UserRepo) GetUsers(ctx context.Context) ([]userEntity.User, error) {
+	select {
+	case <-ctx.Done():
+		return []userEntity.User{}, ctx.Err()
+	default:
+	}
+
+	row, _ := r.storage.Query("SELECT * FROM user")
+	var users []userEntity.User
+	for row.Next() {
+		user := userEntity.User{}
+		err := row.Scan(
+			&user.Id,
+			&user.Login,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return []userEntity.User{}, fmt.Errorf("Failed to find users", err)
+			}
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

@@ -2,7 +2,7 @@ package comment
 
 import "time"
 
-type Messages struct {
+type Message struct {
 	Id      string    `json:"id"`
 	Author  string    `json:"author_id"`
 	PostId  string    `json:"post_id"`
