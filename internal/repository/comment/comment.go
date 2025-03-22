@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/airo507/GoProjectCore/internal/api"
 	"github.com/airo507/GoProjectCore/internal/entity/comment"
 	"log/slog"
 	"strings"
@@ -13,12 +14,6 @@ import (
 
 type CommentRepo struct {
 	storage *sql.DB
-}
-
-type CommentInput struct {
-	Author *string `json:"author_id"`
-	PostId *string `json:"post_id"`
-	Body   *string `json:"body"`
 }
 
 func NewCommentRepo(storage *sql.DB) *CommentRepo {
@@ -60,7 +55,7 @@ func (r CommentRepo) GetComments(ctx context.Context) ([]comment.Message, error)
 	return comments, nil
 }
 
-func (r *CommentRepo) Create(ctx context.Context, message comment.Message) (int64, error) {
+func (r *CommentRepo) Create(ctx context.Context, input api.CommentInput) (int64, error) {
 	select {
 	case <-ctx.Done():
 		return 0, ctx.Err()
@@ -71,7 +66,7 @@ func (r *CommentRepo) Create(ctx context.Context, message comment.Message) (int6
 	if err != nil {
 		return 0, err
 	}
-	res, err := stmt.Exec(message.Author, message.Body, nil, time.Now(), time.Now())
+	res, err := stmt.Exec(input.Author, input.PostId, input.Body, time.Now(), time.Now())
 
 	if err != nil {
 		slog.Error("sql error: ", err)
@@ -86,7 +81,7 @@ func (r *CommentRepo) Create(ctx context.Context, message comment.Message) (int6
 	return id, nil
 }
 
-func (r *CommentRepo) Update(ctx context.Context, commentId int, input CommentInput) error {
+func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.CommentInput) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
@@ -136,11 +131,11 @@ func (r *CommentRepo) Delete(ctx context.Context, commentId int) error {
 
 	stmt, err := r.storage.Prepare("DELETE FROM comment WHERE id = ?")
 	if err != nil {
-		return fmt.Errorf("Sql error: %v", err)
+		return fmt.Errorf("sql error: %v", err)
 	}
 	_, err = stmt.Exec(commentId)
 	if err != nil {
-		return fmt.Errorf("Failed to delete comment: %v", err)
+		return fmt.Errorf("failed to delete comment: %v", err)
 	}
 
 	return nil
@@ -156,6 +151,7 @@ func (r *CommentRepo) GetCommentById(ctx context.Context, commentId int) (commen
 	row := r.storage.QueryRow("SELECT * FROM comment WHERE id = $1", commentId)
 	commentResult := comment.Message{}
 	err := row.Scan(
+		&commentResult.Id,
 		&commentResult.Author,
 		&commentResult.PostId,
 		&commentResult.Body,

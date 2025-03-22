@@ -44,6 +44,11 @@ func main() {
 		router.Post("/posts", handlers.Post.Create)
 		router.Patch("/posts/{post_id}", handlers.Post.Update)
 		router.Delete("/posts/{post_id}", handlers.Post.Delete)
+		router.Get("/posts/comments", handlers.Comment.GetCommentsList)
+		router.Get("/posts/comments/{comment_id}", handlers.Comment.GetCommentById)
+		router.Post("/posts/comments", handlers.Comment.Create)
+		router.Patch("/posts/comment/{comment_id}", handlers.Comment.Update)
+		router.Delete("/posts/comment/{comment_id}", handlers.Comment.Delete)
 	})
 
 	err = http.ListenAndServe(":8081", router)
