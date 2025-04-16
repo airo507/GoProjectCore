@@ -3,12 +3,12 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 func New(database string) (*sql.DB, error) {
 
-	db, err := sql.Open("sqlite3", database)
+	db, err := sql.Open("sqlite", database)
 
 	if err != nil {
 		fmt.Printf("Error opening database %s\n", err)
@@ -26,7 +26,9 @@ func New(database string) (*sql.DB, error) {
 		    password STRING NOT NULL,
 		    created_at TIMESTAMP NOT NULL,
 		    updated_at TIMESTAMP NOT NULL
-		);`,
+		);
+		CREATE INDEX idx_user_login ON user (login);
+		`,
 		`CREATE TABLE IF NOT EXISTS post
 		(
 		 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +37,9 @@ func New(database string) (*sql.DB, error) {
 		    likes INTEGER,
 		    created_at TIMESTAMP NOT NULL,
 		    updated_at TIMESTAMP NOT NULL 
-		);`,
+		);
+		CREATE INDEX idx_post_author_id ON post (author_id);
+		`,
 		`CREATE TABLE IF NOT EXISTS comment
 		(
 		 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,16 +48,9 @@ func New(database string) (*sql.DB, error) {
 		    body STRING NOT NULL,
 		    created_at TIMESTAMP NOT NULL,
 		    updated_at TIMESTAMP NOT NULL
-		);`,
-		`CREATE TABLE IF NOT EXISTS comment
-		(
-		    id INTEGER PRIMARY KEY AUTOINCREMENT,
-		    author_id STRING NOT NULL,
-		    post_id STRING NOT NULL,
-		    body STRING NOT NULL,
-		    created_at TIMESTAMP NOT NULL,
-		    updated_at TIMESTAMP NOT NULL
-		);`,
+		);
+		CREATE INDEX idx_post_author_id ON comment (author_id);
+		`,
 	}
 
 	for _, stmt := range query {
