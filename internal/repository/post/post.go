@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+type PostRepository interface {
+	Create(ctx context.Context, post postEntity.Post) (int64, error)
+	Update(ctx context.Context, postId int, input api.PostInput) error
+	Delete(ctx context.Context, postId int) error
+	GetPosts(ctx context.Context) (map[int]postEntity.Post, error)
+	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
+	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
+	GetPostLikes(ctx context.Context, postId int) (*int, error)
+}
+
 type PostRepo struct {
 	storage *sql.DB
 }
@@ -28,20 +38,14 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 	default:
 	}
 
-	stmt, err := r.storage.Prepare("INSERT INTO post (author_id, body, likes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
-	if err != nil {
-		return 0, err
-	}
-	res, err := stmt.Exec(post.Author, post.Body, nil, time.Now(), time.Now())
+	var id int64
+	query := "INSERT INTO posts (author_id, body, likes, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+
+	err := r.storage.QueryRowContext(ctx, query, post.Author, post.Body, nil, time.Now(), time.Now()).Scan(&id)
 
 	if err != nil {
-		slog.Error("sql error: ", err)
+		slog.Error("create error: ", err)
 		return 0, fmt.Errorf("sql error: %v", err)
-	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed create post: %w", err)
 	}
 
 	return id, nil
@@ -53,34 +57,34 @@ func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) 
 		return ctx.Err()
 	default:
 	}
+	index := 1
 
 	var setPosts []string
 	var fields []interface{}
 	if input.Author != nil {
-		setPosts = append(setPosts, "author_id = ?")
+		setPosts = append(setPosts, fmt.Sprintf("author_id = $%d", index))
 		fields = append(fields, *input.Author)
+		index++
 	}
 	if input.Body != nil {
-		setPosts = append(setPosts, "body = ?")
+		setPosts = append(setPosts, fmt.Sprintf("body = $%d", index))
 		fields = append(fields, *input.Body)
+		index++
 	}
 	if input.Likes != nil {
-		setPosts = append(setPosts, "likes = ?")
+		setPosts = append(setPosts, fmt.Sprintf("likes = $%d", index))
 		fields = append(fields, *input.Likes)
+		index++
 	}
 
-	setPosts = append(setPosts, "updated_at = ?")
+	setPosts = append(setPosts, fmt.Sprintf("updated_at = $%d", index))
 	fields = append(fields, time.Now())
+	index++
 	fields = append(fields, postId)
 
-	query := fmt.Sprintf("UPDATE post SET %s WHERE id = ?", strings.Join(setPosts, ", "))
+	query := fmt.Sprintf("UPDATE posts SET %s WHERE id = $%d RETURNING id", strings.Join(setPosts, ", "), index)
 
-	stmt, err := r.storage.Prepare(query)
-	if err != nil {
-		return fmt.Errorf("sql error: %v", err)
-	}
-	_, err = stmt.Exec(fields...)
-
+	err := r.storage.QueryRowContext(ctx, query, fields...).Scan(&postId)
 	if err != nil {
 		return fmt.Errorf("update error: %v", err)
 	}
@@ -95,11 +99,9 @@ func (r *PostRepo) Delete(ctx context.Context, postId int) error {
 	default:
 	}
 
-	stmt, err := r.storage.Prepare("DELETE FROM post WHERE id = ?")
-	if err != nil {
-		return fmt.Errorf("Sql error: %v", err)
-	}
-	_, err = stmt.Exec(postId)
+	query := "DELETE FROM posts WHERE id = $1"
+	err := r.storage.QueryRowContext(ctx, query, postId).Scan(&postId)
+
 	if err != nil {
 		return fmt.Errorf("Failed to delete post: %v", err)
 	}
@@ -114,14 +116,17 @@ func (r *PostRepo) GetPosts(ctx context.Context) (map[int]postEntity.Post, error
 	default:
 	}
 
-	stmt, err := r.storage.Query("SELECT * FROM post")
+	query := "SELECT * FROM posts"
+
+	row, err := r.storage.QueryContext(ctx, query)
 	if err != nil {
 		return map[int]postEntity.Post{}, ctx.Err()
 	}
 	posts := map[int]postEntity.Post{}
-	for stmt.Next() {
+
+	for row.Next() {
 		post := postEntity.Post{}
-		err = stmt.Scan(
+		err = row.Scan(
 			&post.Id,
 			&post.Author,
 			&post.Body,
@@ -135,7 +140,7 @@ func (r *PostRepo) GetPosts(ctx context.Context) (map[int]postEntity.Post, error
 		posts[post.Id] = post
 	}
 
-	if err = stmt.Err(); err != nil {
+	if err = row.Err(); err != nil {
 		return map[int]postEntity.Post{}, fmt.Errorf("Rows error: %v", err)
 	}
 	return posts, nil
@@ -148,7 +153,8 @@ func (r *PostRepo) GetPostById(ctx context.Context, postId int) (postEntity.Post
 	default:
 	}
 
-	row := r.storage.QueryRow("SELECT * FROM post WHERE id = $1", postId)
+	query := "SELECT * FROM posts WHERE id = $1"
+	row := r.storage.QueryRowContext(ctx, query, postId)
 	post := postEntity.Post{}
 	err := row.Scan(
 		&post.Id,
@@ -172,7 +178,8 @@ func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEnti
 	default:
 	}
 
-	row, _ := r.storage.Query("SELECT * FROM post WHERE author_id = $1", userId)
+	query := "SELECT * FROM posts WHERE author_id = $1"
+	row, _ := r.storage.QueryContext(ctx, query, userId)
 	var posts []postEntity.Post
 	for row.Next() {
 		post := postEntity.Post{}

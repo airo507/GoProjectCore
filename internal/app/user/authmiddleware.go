@@ -21,7 +21,6 @@ func (i *UserImplementation) AuthMiddleware(nextHandler http.Handler) http.Handl
 			}
 
 			loginClaim, err := i.service.CheckToken(tokenString)
-
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				_ = json.NewEncoder(w).Encode(api.DefaultResponse{
@@ -30,6 +29,7 @@ func (i *UserImplementation) AuthMiddleware(nextHandler http.Handler) http.Handl
 				})
 				return
 			}
+
 			ctx := context.WithValue(r.Context(), "user", loginClaim)
 			nextHandler.ServeHTTP(w, r.WithContext(ctx))
 		},

@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (p *PostImplementation) Update(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	id := chi.URLParam(r, "post_id")
@@ -18,7 +18,7 @@ func (p *PostImplementation) Update(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	existPost, err := p.service.GetPostById(r.Context(), postId)
+	existPost, err := i.service.GetPostById(r.Context(), postId)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -46,7 +46,7 @@ func (p *PostImplementation) Update(w http.ResponseWriter, r *http.Request) {
 		Likes:  nil,
 	}
 
-	err = p.service.Update(r.Context(), postId, postData)
+	err = i.service.Update(r.Context(), postId, postData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

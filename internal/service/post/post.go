@@ -4,14 +4,24 @@ import (
 	"context"
 	"github.com/airo507/GoProjectCore/internal/api"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
-	"github.com/airo507/GoProjectCore/internal/repository"
+	postRepository "github.com/airo507/GoProjectCore/internal/repository/post"
 )
 
-type PostService struct {
-	repo repository.Postable
+type PostServiceInterface interface {
+	Create(ctx context.Context, post postEntity.Post) (int64, error)
+	Update(ctx context.Context, postId int, postFields api.PostInput) error
+	Delete(ctx context.Context, postId int) error
+	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
+	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
+	GetPostRating(ctx context.Context, postId int) (*int, error)
+	GetPostList(ctx context.Context) (map[int]postEntity.Post, error)
 }
 
-func NewPostService(postRepo repository.Postable) *PostService {
+type PostService struct {
+	repo postRepository.PostRepository
+}
+
+func NewPostService(postRepo postRepository.PostRepository) *PostService {
 	return &PostService{
 		repo: postRepo,
 	}

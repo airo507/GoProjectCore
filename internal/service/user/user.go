@@ -5,22 +5,29 @@ import (
 	"fmt"
 	"github.com/airo507/GoProjectCore/internal/api"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
-	"github.com/airo507/GoProjectCore/internal/repository"
+	userRepository "github.com/airo507/GoProjectCore/internal/repository/user"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"log/slog"
 	"time"
 )
 
+type UserServiceInterface interface {
+	Register(ctx context.Context, userInfo api.ResponseUser) (int64, error)
+	Login(ctx context.Context, userData api.InputUser) (string, error)
+	CheckToken(tokenString string) (string, error)
+	GetUsers(ctx context.Context) ([]userEntity.User, error)
+}
+
 type UserService struct {
-	repo repository.Userable
+	repo userRepository.UserRepository
 }
 
 const (
 	secretKey = "secretkey1"
 )
 
-func NewUserService(userRepository repository.Userable) *UserService {
+func NewUserService(userRepository userRepository.UserRepository) *UserService {
 	return &UserService{
 		repo: userRepository,
 	}
@@ -59,17 +66,23 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 func (s *UserService) Login(ctx context.Context, input api.InputUser) (string, error) {
 	checkUser, err := s.repo.Get(ctx, input.Login)
 	if err != nil {
+		slog.Error("User not find: %w")
 		return "", fmt.Errorf("User not find: %w", err)
 	}
+
 	if !s.CheckPassword(input.Password, checkUser.Password) {
+		slog.Error("Invalid password or login")
 		return "", fmt.Errorf("Invalid password or login")
 	}
+
 	if checkUser.Login != input.Login {
+		slog.Error("Invalid login")
 		return "", fmt.Errorf("Invalid login")
 	}
-	token, err := s.GenerateJwt(input.Login)
 
+	token, err := s.GenerateJwt(input.Login)
 	if err != nil {
+		slog.Error("Error generating token")
 		return "", fmt.Errorf("Error generating token: %v", err)
 	}
 

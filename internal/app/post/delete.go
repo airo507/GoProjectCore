@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (p *PostImplementation) Delete(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	id := chi.URLParam(r, "post_id")
@@ -18,7 +18,7 @@ func (p *PostImplementation) Delete(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	err = p.service.Delete(r.Context(), postId)
+	err = i.service.Delete(r.Context(), postId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{

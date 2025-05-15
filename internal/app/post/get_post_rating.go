@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (p *PostImplementation) GetPostRating(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) GetPostRating(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	id := chi.URLParam(r, "post_id")
@@ -18,7 +18,7 @@ func (p *PostImplementation) GetPostRating(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	likeCount, err := p.service.GetPostRating(r.Context(), postId)
+	likeCount, err := i.service.GetPostRating(r.Context(), postId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{

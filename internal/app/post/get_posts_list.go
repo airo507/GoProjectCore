@@ -6,10 +6,10 @@ import (
 	"net/http"
 )
 
-func (p *PostImplementation) GetPostList(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) GetPostList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
-	postList, err := p.service.GetPostList(r.Context())
+	postList, err := i.service.GetPostList(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{

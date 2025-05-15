@@ -30,8 +30,9 @@ func (i *UserImplementation) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{
 			Code:    api.InternalError,
-			Message: "Can't register user",
+			Message: "Bad credentials!",
 		})
+
 		return
 	}
 	json.NewEncoder(w).Encode(api.LoginResponse{AccessToken: token})

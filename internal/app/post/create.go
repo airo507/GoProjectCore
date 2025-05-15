@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (p *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	author, ok := api.PathValueOrError(w, r, "author")
@@ -36,7 +36,7 @@ func (p *PostImplementation) Create(w http.ResponseWriter, r *http.Request) {
 		Updated: time.Now(),
 	}
 
-	createdPost, err := p.service.Create(r.Context(), postData)
+	createdPost, err := i.service.Create(r.Context(), postData)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

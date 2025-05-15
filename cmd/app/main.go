@@ -1,11 +1,17 @@
 package main
 
 import (
-	"github.com/airo507/GoProjectCore/internal/app"
+	commentImplementation "github.com/airo507/GoProjectCore/internal/app/comment"
+	postImplementation "github.com/airo507/GoProjectCore/internal/app/post"
+	userImplementation "github.com/airo507/GoProjectCore/internal/app/user"
 	"github.com/airo507/GoProjectCore/internal/config"
-	"github.com/airo507/GoProjectCore/internal/repository"
-	"github.com/airo507/GoProjectCore/internal/service"
-	"github.com/airo507/GoProjectCore/internal/storage/sqlite"
+	commentRepository "github.com/airo507/GoProjectCore/internal/repository/comment"
+	postRepository "github.com/airo507/GoProjectCore/internal/repository/post"
+	userRepository "github.com/airo507/GoProjectCore/internal/repository/user"
+	commentService "github.com/airo507/GoProjectCore/internal/service/comment"
+	postService "github.com/airo507/GoProjectCore/internal/service/post"
+	userService "github.com/airo507/GoProjectCore/internal/service/user"
+	"github.com/airo507/GoProjectCore/internal/storage/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
@@ -16,39 +22,38 @@ import (
 )
 
 func main() {
-	env := config.GetConfig()
-	dbName := env.StoragePath
-	slog.Info(dbName)
-	db, err := sqlite.New(dbName)
+	dsn := config.GetConfig()
+	db, err := postgres.New(dsn)
 	if err != nil {
 		slog.Error("Create new database failed!", err)
 	}
 
-	repos := repository.NewRepository(db)
-	newService := service.NewService(repos)
-	handlers := app.NewImplementation(newService)
+	userRepoData := userRepository.NewUserRepo(db)
+	userServiceData := userService.NewUserService(userRepoData)
+	userHandler := userImplementation.NewUserImplementation(userServiceData)
+
+	postRepoData := postRepository.NewPostRepo(db)
+	postServiceData := postService.NewPostService(postRepoData)
+	postHandler := postImplementation.NewPostImplementation(postServiceData)
+
+	commentRepoData := commentRepository.NewCommentRepo(db)
+	commentServiceData := commentService.NewCommentService(commentRepoData)
+	commentHandler := commentImplementation.NewCommentImplementation(commentServiceData)
+
+	//repos := repository.NewRepository(db)
+	//newService := service.NewService(repos)
+	//handlers := app.NewImplementation(newService)
 
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
-	router.Post("/register", handlers.User.RegisterUser)
-	router.Post("/login", handlers.User.Login)
+	router.Post("/register", userHandler.RegisterUser)
+	router.Post("/login", userHandler.Login)
 
 	router.Group(func(r chi.Router) {
-		r.Use(handlers.User.AuthMiddleware)
-		router.Get("/users", handlers.User.GetUsers)
-		router.Get("/posts", handlers.Post.GetPostList)
-		router.Get("/posts/{post_id}", handlers.Post.GetPostById)
-		router.Get("/posts/users/{user_id}", handlers.Post.GetPostsListByUserId)
-		router.Get("/posts/rating/{post_id}", handlers.Post.GetPostRating)
-		router.Post("/posts", handlers.Post.Create)
-		router.Patch("/posts/{post_id}", handlers.Post.Update)
-		router.Delete("/posts/{post_id}", handlers.Post.Delete)
-		router.Get("/posts/comments", handlers.Comment.GetCommentsList)
-		router.Get("/posts/comments/{comment_id}", handlers.Comment.GetCommentById)
-		router.Post("/posts/comments", handlers.Comment.Create)
-		router.Patch("/posts/comment/{comment_id}", handlers.Comment.Update)
-		router.Delete("/posts/comment/{comment_id}", handlers.Comment.Delete)
+		r.Use(userHandler.AuthMiddleware)
+		postHandler.Router(router)
+		commentHandler.Router(router)
 	})
 
 	err = http.ListenAndServe(":8081", router)

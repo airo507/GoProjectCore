@@ -2,26 +2,24 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
+	"github.com/joho/godotenv"
 	"os"
 )
 
-type Config struct {
-	Env         string `yaml:"env"`
-	StoragePath string `yaml:"storage_path"`
-}
+func GetConfig() string {
+	err := godotenv.Load(".env")
 
-func GetConfig() *Config {
-	envFile, err := os.ReadFile("./config/local.yaml")
 	if err != nil {
-		fmt.Println("Error reading config file")
+		fmt.Println("Error reading env file")
 	}
 
-	var config Config
-	err = yaml.Unmarshal(envFile, &config)
-	if err != nil {
-		fmt.Println("Error parsing config file")
-	}
+	dbName := os.Getenv("DB_NAME")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
 
-	return &config
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	return dsn
 }

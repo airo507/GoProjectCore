@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (p *PostImplementation) GetPostById(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) GetPostById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	id := chi.URLParam(r, "post_id")
@@ -18,7 +18,7 @@ func (p *PostImplementation) GetPostById(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	postExist, err := p.service.GetPostById(r.Context(), postId)
+	postExist, err := i.service.GetPostById(r.Context(), postId)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

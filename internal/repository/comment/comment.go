@@ -6,11 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"github.com/airo507/GoProjectCore/internal/api"
-	"github.com/airo507/GoProjectCore/internal/entity/comment"
+	commentEntity "github.com/airo507/GoProjectCore/internal/entity/comment"
 	"log/slog"
 	"strings"
 	"time"
 )
+
+type CommentRepository interface {
+	GetComments(ctx context.Context) ([]commentEntity.Message, error)
+	Create(ctx context.Context, input api.CommentInput) (int64, error)
+	Delete(ctx context.Context, commentId int) error
+	Update(ctx context.Context, commentId int, input api.CommentInput) error
+	GetCommentById(ctx context.Context, commentId int) (commentEntity.Message, error)
+}
 
 type CommentRepo struct {
 	storage *sql.DB
@@ -22,20 +30,21 @@ func NewCommentRepo(storage *sql.DB) *CommentRepo {
 	}
 }
 
-func (r CommentRepo) GetComments(ctx context.Context) ([]comment.Message, error) {
+func (r CommentRepo) GetComments(ctx context.Context) ([]commentEntity.Message, error) {
 	select {
 	case <-ctx.Done():
-		return []comment.Message{}, ctx.Err()
+		return []commentEntity.Message{}, ctx.Err()
 	default:
 	}
 
-	rows, err := r.storage.QueryContext(ctx, "SELECT * FROM comment")
+	query := "SELECT * FROM comments"
+	rows, err := r.storage.QueryContext(ctx, query)
 	if err != nil {
-		return []comment.Message{}, fmt.Errorf("Error to find comments: %w", err)
+		return []commentEntity.Message{}, fmt.Errorf("Error to find comments: %w", err)
 	}
-	var comments []comment.Message
+	var comments []commentEntity.Message
 	for rows.Next() {
-		var commentResult comment.Message
+		var commentResult commentEntity.Message
 		err = rows.Scan(
 			&commentResult.Id,
 			&commentResult.PostId,
@@ -46,7 +55,7 @@ func (r CommentRepo) GetComments(ctx context.Context) ([]comment.Message, error)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				if errors.Is(err, sql.ErrNoRows) {
-					return []comment.Message{}, fmt.Errorf("Failed to find comments", err)
+					return []commentEntity.Message{}, fmt.Errorf("Failed to find comments", err)
 				}
 			}
 		}
@@ -62,20 +71,13 @@ func (r *CommentRepo) Create(ctx context.Context, input api.CommentInput) (int64
 	default:
 	}
 
-	stmt, err := r.storage.Prepare("INSERT INTO comment (author_id, post_id, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?)")
-	if err != nil {
-		return 0, err
-	}
-	res, err := stmt.Exec(input.Author, input.PostId, input.Body, time.Now(), time.Now())
+	var id int64
+	query := "INSERT INTO comments (author_id, post_id, body, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	err := r.storage.QueryRowContext(ctx, query, input.Author, input.PostId, input.Body, time.Now(), time.Now()).Scan(&id)
 
 	if err != nil {
 		slog.Error("sql error: ", err)
 		return 0, fmt.Errorf("sql error: %v", err)
-	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed create comment: %w", err)
 	}
 
 	return id, nil
@@ -88,32 +90,33 @@ func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.Comme
 	default:
 	}
 
+	index := 1
 	var setComment []string
 	var fields []interface{}
 	if input.Author != nil {
-		setComment = append(setComment, "author_id = ?")
+		setComment = append(setComment, fmt.Sprintf("author_id = $%d", index))
 		fields = append(fields, *input.Author)
+		index++
 	}
 	if input.PostId != nil {
-		setComment = append(setComment, "post_id = ?")
+		setComment = append(setComment, fmt.Sprintf("post_id = $%d", index))
 		fields = append(fields, *input.PostId)
+		index++
 	}
 	if input.Body != nil {
-		setComment = append(setComment, "body = ?")
+		setComment = append(setComment, fmt.Sprintf("body = $%d", index))
 		fields = append(fields, *input.Body)
+		index++
 	}
 
-	setComment = append(setComment, "updated_at = ?")
+	setComment = append(setComment, fmt.Sprintf("updated_at = $%d", index))
 	fields = append(fields, time.Now())
+	index++
 	fields = append(fields, commentId)
 
-	query := fmt.Sprintf("UPDATE comment SET %s WHERE id = ?", strings.Join(setComment, ", "))
+	query := fmt.Sprintf("UPDATE comments SET %s WHERE id = $%d RETURNING id", strings.Join(setComment, ", "), index)
 
-	stmt, err := r.storage.Prepare(query)
-	if err != nil {
-		return fmt.Errorf("sql error: %v", err)
-	}
-	_, err = stmt.Exec(fields...)
+	err := r.storage.QueryRowContext(ctx, query, fields...).Scan(&input)
 
 	if err != nil {
 		return fmt.Errorf("update error: %v", err)
@@ -129,11 +132,9 @@ func (r *CommentRepo) Delete(ctx context.Context, commentId int) error {
 	default:
 	}
 
-	stmt, err := r.storage.Prepare("DELETE FROM comment WHERE id = ?")
-	if err != nil {
-		return fmt.Errorf("sql error: %v", err)
-	}
-	_, err = stmt.Exec(commentId)
+	query := "DELETE FROM comments WHERE id = $1"
+	err := r.storage.QueryRowContext(ctx, query, commentId).Scan(&commentId)
+
 	if err != nil {
 		return fmt.Errorf("failed to delete comment: %v", err)
 	}
@@ -141,15 +142,16 @@ func (r *CommentRepo) Delete(ctx context.Context, commentId int) error {
 	return nil
 }
 
-func (r *CommentRepo) GetCommentById(ctx context.Context, commentId int) (comment.Message, error) {
+func (r *CommentRepo) GetCommentById(ctx context.Context, commentId int) (commentEntity.Message, error) {
 	select {
 	case <-ctx.Done():
-		return comment.Message{}, ctx.Err()
+		return commentEntity.Message{}, ctx.Err()
 	default:
 	}
 
-	row := r.storage.QueryRow("SELECT * FROM comment WHERE id = $1", commentId)
-	commentResult := comment.Message{}
+	query := "SELECT * FROM comments WHERE id = $1"
+	row := r.storage.QueryRowContext(ctx, query, commentId)
+	commentResult := commentEntity.Message{}
 	err := row.Scan(
 		&commentResult.Id,
 		&commentResult.Author,
@@ -159,7 +161,7 @@ func (r *CommentRepo) GetCommentById(ctx context.Context, commentId int) (commen
 		&commentResult.Updated,
 	)
 	if err != nil {
-		return comment.Message{}, fmt.Errorf("failed to scan row: %v", err)
+		return commentEntity.Message{}, fmt.Errorf("failed to scan row: %v", err)
 	}
 
 	return commentResult, nil

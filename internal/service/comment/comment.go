@@ -3,10 +3,18 @@ package comment
 import (
 	"context"
 	"github.com/airo507/GoProjectCore/internal/api"
-	"github.com/airo507/GoProjectCore/internal/entity/comment"
-	"github.com/airo507/GoProjectCore/internal/repository"
+	commentEntity "github.com/airo507/GoProjectCore/internal/entity/comment"
+	commentRepository "github.com/airo507/GoProjectCore/internal/repository/comment"
 	"time"
 )
+
+type CommentServiceInterface interface {
+	Create(ctx context.Context, input api.CommentInput) (int64, error)
+	Update(ctx context.Context, id int, input api.CommentInput) error
+	Delete(ctx context.Context, id int) error
+	GetCommentById(ctx context.Context, commentId int) (CommentResult, error)
+	GetCommentsList(ctx context.Context) ([]commentEntity.Message, error)
+}
 
 type CommentResult struct {
 	Id      int       `json:"id"`
@@ -18,10 +26,10 @@ type CommentResult struct {
 }
 
 type CommentService struct {
-	repository repository.Commentable
+	repository commentRepository.CommentRepository
 }
 
-func NewCommentService(repository repository.Commentable) *CommentService {
+func NewCommentService(repository commentRepository.CommentRepository) *CommentService {
 	return &CommentService{
 		repository: repository,
 	}
@@ -69,10 +77,10 @@ func (s *CommentService) GetCommentById(ctx context.Context, commentId int) (Com
 	return commentResult, nil
 }
 
-func (s *CommentService) GetCommentsList(ctx context.Context) ([]comment.Message, error) {
+func (s *CommentService) GetCommentsList(ctx context.Context) ([]commentEntity.Message, error) {
 	commentsList, err := s.repository.GetComments(ctx)
 	if err != nil {
-		return []comment.Message{}, err
+		return []commentEntity.Message{}, err
 	}
 	return commentsList, nil
 }

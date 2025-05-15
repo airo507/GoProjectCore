@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (p *PostImplementation) GetPostsListByUserId(w http.ResponseWriter, r *http.Request) {
+func (i *PostImplementation) GetPostsListByUserId(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	id := chi.URLParam(r, "user_id")
@@ -18,7 +18,7 @@ func (p *PostImplementation) GetPostsListByUserId(w http.ResponseWriter, r *http
 		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	postList, err := p.service.GetPostsByUserId(r.Context(), userId)
+	postList, err := i.service.GetPostsByUserId(r.Context(), userId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_ = json.NewEncoder(w).Encode(api.DefaultResponse{
