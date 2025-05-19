@@ -40,10 +40,6 @@ func main() {
 	commentServiceData := commentService.NewCommentService(commentRepoData)
 	commentHandler := commentImplementation.NewCommentImplementation(commentServiceData)
 
-	//repos := repository.NewRepository(db)
-	//newService := service.NewService(repos)
-	//handlers := app.NewImplementation(newService)
-
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
@@ -62,8 +58,10 @@ func main() {
 	}
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-	<-quit
 
 	slog.Info("Shutting down server...")
+
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
 }
