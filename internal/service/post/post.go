@@ -13,7 +13,7 @@ type PostServiceInterface interface {
 	Delete(ctx context.Context, postId int) error
 	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
 	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
-	GetPostRating(ctx context.Context, postId int) (*int, error)
+	GetPostRating(ctx context.Context, postId int) (int, error)
 	GetPostList(ctx context.Context) (map[int]postEntity.Post, error)
 }
 
@@ -81,10 +81,10 @@ func (s *PostService) GetPostList(ctx context.Context) (map[int]postEntity.Post,
 	return posts, nil
 }
 
-func (s *PostService) GetPostRating(ctx context.Context, postId int) (*int, error) {
+func (s *PostService) GetPostRating(ctx context.Context, postId int) (int, error) {
 	likes, err := s.repo.GetPostLikes(ctx, postId)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	return likes, nil
 }

@@ -18,7 +18,7 @@ type PostRepository interface {
 	GetPosts(ctx context.Context) (map[int]postEntity.Post, error)
 	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
 	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
-	GetPostLikes(ctx context.Context, postId int) (*int, error)
+	GetPostLikes(ctx context.Context, postId int) (int, error)
 }
 
 type PostRepo struct {
@@ -137,7 +137,7 @@ func (r *PostRepo) GetPosts(ctx context.Context) (map[int]postEntity.Post, error
 		if err != nil {
 			return map[int]postEntity.Post{}, fmt.Errorf("failed to scan row: %v", err)
 		}
-		posts[post.Id] = post
+		posts[int(post.Id)] = post
 	}
 
 	if err = row.Err(); err != nil {
@@ -200,16 +200,16 @@ func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEnti
 	return posts, nil
 }
 
-func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (*int, error) {
+func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (int, error) {
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return 0, ctx.Err()
 	default:
 	}
 
 	post, err := r.GetPostById(ctx, postId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get post likes: %v", err)
+		return 0, fmt.Errorf("failed to get post likes: %v", err)
 	}
 	likes := post.Likes
 

@@ -93,19 +93,19 @@ func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.Comme
 	index := 1
 	var setComment []string
 	var fields []interface{}
-	if input.Author != nil {
+	if input.Author != 0 {
 		setComment = append(setComment, fmt.Sprintf("author_id = $%d", index))
-		fields = append(fields, *input.Author)
+		fields = append(fields, input.Author)
 		index++
 	}
-	if input.PostId != nil {
+	if input.PostId != 0 {
 		setComment = append(setComment, fmt.Sprintf("post_id = $%d", index))
-		fields = append(fields, *input.PostId)
+		fields = append(fields, input.PostId)
 		index++
 	}
-	if input.Body != nil {
+	if input.Body != "" {
 		setComment = append(setComment, fmt.Sprintf("body = $%d", index))
-		fields = append(fields, *input.Body)
+		fields = append(fields, input.Body)
 		index++
 	}
 

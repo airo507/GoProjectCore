@@ -1,0 +1,188 @@
+syntax = "proto3";
+
+package blog;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/airo507/GoProjectCore/grpc/blog/pkg;blog";
+
+service UserService {
+  rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
+  rpc LoginUser(LoginRequest) returns (LoginResponse);
+  rpc GetUsers(EmptyUserRequest) returns (UsersResponse);
+}
+
+message EmptyUserRequest {}
+
+message UserInfo {
+  string login = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string email = 4;
+  string password = 5;
+}
+
+
+message RegisterUserRequest {
+  UserInfo info = 1;
+}
+
+message RegisterUserResponse {
+  int64 user_id = 1;
+}
+
+message LoginRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string token = 1;
+}
+
+message User {
+  int64 id = 1;
+  string login = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string email = 5;
+  google.protobuf.Timestamp createdAt = 6;
+  google.protobuf.Timestamp updatedAt = 7;
+}
+
+message UsersResponse {
+  repeated User user = 1;
+}
+
+service PostService {
+  rpc Create(CreatePostRequest) returns (CreatePostResponse);
+  rpc Update(UpdatePostRequest) returns (UpdatePostResponse);
+  rpc Delete(PostIdRequest) returns (DeletePostResponse);
+  rpc GetPostById(PostIdRequest) returns (PostResponse);
+  rpc GetPostsList(EmptyPostRequest) returns (PostsListResponse);
+  rpc GetPostsListByUserId(UserIdRequest) returns (PostsListResponse);
+  rpc GetPostRating(PostIdRequest) returns (PostRatingResponse);
+}
+
+message EmptyPostRequest {}
+
+message PostInfo {
+  int64 author = 1;
+  string body = 2;
+}
+
+message Post {
+  int64 id = 1;
+  int64 author = 2;
+  string body = 3;
+  int64 likes = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message PostIdRequest {
+  int64 id = 1;
+}
+
+message CreatePostRequest {
+  PostInfo post_info = 1;
+}
+
+message CreatePostResponse {
+  int64 post_id = 1;
+}
+
+message UpdatePostRequest {
+  int64 post_id = 1;
+  int64 author = 2;
+  string body = 3;
+}
+
+message UpdatePostResponse {
+  int64 post_id = 1;
+  int64 author = 2;
+  string body = 3;
+}
+
+
+message DeletePostResponse {
+  bool result = 1;
+}
+
+message PostResponse {
+  Post post = 1;
+}
+
+message PostsListResponse {
+  repeated Post post = 1;
+}
+
+message UserIdRequest {
+  int64 user_id = 1;
+}
+
+message PostRatingResponse {
+  int64 likes = 1;
+}
+
+service CommentService {
+  rpc Create(CreateCommentRequest) returns (CreateCommentResponse);
+  rpc Update(UpdateCommentRequest) returns (UpdateCommentResponse);
+  rpc Delete(CommentIdRequest) returns (DeleteCommentResponse);
+  rpc GetCommentById(CommentIdRequest) returns (CommentResponse);
+  rpc GetCommentsList(EmptyCommentMessage) returns (CommentsListResponse);
+}
+
+message EmptyCommentMessage {}
+
+message Comment {
+  int64 comment_id = 1;
+  int64 post_id = 2;
+  int64 author = 3;
+  string body = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateCommentRequest {
+  int64 post_id = 1;
+  int64 author = 2;
+  string body = 3;
+}
+
+message CreateCommentResponse{
+  int64 comment_id = 1;
+};
+
+message UpdateCommentRequest{
+  int64 comment_id = 1;
+  int64 post_id = 2;
+  int64 author = 3;
+  string body = 4;
+};
+
+message UpdateCommentResponse{
+  int64 comment_id = 1;
+  int64 post_id = 2;
+  int64 author = 3;
+  string body = 4;
+};
+
+message DeleteCommentResponse{
+  bool result = 1;
+};
+
+message CommentIdRequest{
+  int64 comment_id = 1;
+};
+
+message CommentResponse{
+    Comment comment = 1;
+};
+
+message CommentsListResponse{
+  repeated Comment comment = 1;
+};
+
+
+
