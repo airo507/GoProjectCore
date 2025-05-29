@@ -2,6 +2,8 @@ module github.com/airo507/GoProjectCore
 
 go 1.23.6
 
+// TODO: Отсутствует go.sum файл. Он обязателен.
+
 require (
 	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect

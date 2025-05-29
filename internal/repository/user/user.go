@@ -77,6 +77,8 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 		&user.UpdatedAt,
 	)
 	if err != nil {
+		// TODO: Лучше использовать errors.Is(err, sql.ErrNoRows). Если драйвер оборачивает ошибку
+		// sql.ErrNoRows в какую-то собственную, то такое сравнение на равенство не будет работать.
 		if err == sql.ErrNoRows {
 			slog.Error("failed to find user ", err)
 			return userEntity.User{}, err
@@ -93,6 +95,8 @@ func (r *UserRepo) GetUsers(ctx context.Context) ([]userEntity.User, error) {
 		return []userEntity.User{}, ctx.Err()
 	default:
 	}
+
+	// TODO: Пагинация.
 
 	row, _ := r.storage.Query("SELECT * FROM user")
 	var users []userEntity.User

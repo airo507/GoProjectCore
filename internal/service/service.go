@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	api "github.com/airo507/GoProjectCore/internal/api"
+	"github.com/airo507/GoProjectCore/internal/api"
 	message "github.com/airo507/GoProjectCore/internal/entity/comment"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
@@ -12,12 +12,39 @@ import (
 	"github.com/airo507/GoProjectCore/internal/service/user"
 )
 
+// TODO: Тоже самое про интерфейсы, что и в ../repository/repository.go
+//
+// TODO: Нужно стремиться к маленьким интерфейсам. Если интерфейс большой и содержит
+// много методов, то это может стать знаком, что там намешана разная логика без связи.
+//
+// Например, в Authorization у тебя логика отвечающая за:
+// - Регистрацию,
+// - Логин,
+// - Проверку токена,
+// - Получение пользователей.
+//
+// Потенциально это может быть 3 интерфейса.
+// - Регистрация.
+// - Логин, Проверка токена.
+// - Получение пользователей.
+// ИЛИ
+// - Регистрация, Логин.
+// - Проверка токена.
+// - Получение пользователей.
+//
+// Ну короче получение пользователей это точно не про Authorization, это про UserService или
+// что-то похожее. Условно Authorization должен делать только что-то связанное с
+// кнопками (Регистрация, Логин).
+
 type Authorization interface {
 	Register(ctx context.Context, userInfo api.ResponseUser) (int64, error)
 	Login(ctx context.Context, userData api.InputUser) (string, error)
 	CheckToken(tokenString string) (string, error)
 	GetUsers(ctx context.Context) ([]userEntity.User, error)
 }
+
+// TODO: Все еще страдает нейминг, но интерфейс хоть и больше чем Authorization,
+// зато связанный функционалом вокруг сущности Post.
 
 type Posting interface {
 	Create(ctx context.Context, post postEntity.Post) (int64, error)
@@ -42,6 +69,14 @@ type Service struct {
 	Post    Posting
 	Comment Commenting
 }
+
+// TODO: Тоже самое что и в ../app/implementation.go. Не вижу смысла делать общую структуру.
+// Мы просто связываем их таким образом, по ощущению. А это имеет смысл только в том случае
+// если они супер связаны между собой.
+//
+// PS: В целом, ты можешь сделать так, но точно не в этом пакете. В пакете app можно так сделать
+// для упрощения инициализации приложения. Но у тебя такое маленькое приложение, что смысла
+// тоже пока нет.
 
 func NewService(repository *repository.Repository) *Service {
 	return &Service{

@@ -64,6 +64,11 @@ func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) 
 		setPosts = append(setPosts, "body = ?")
 		fields = append(fields, *input.Body)
 	}
+	// TODO: Обновлять Likes через присваивание нового значения приведет к ошибкам в данных.
+	// - Запрос 1: Получает likes = 10 и хочет сделать +1.
+	// - Запрос 2: Получает likes = 10 и хочет сделать +1.
+	// В итоге получим 11, а должны 12. Тут нужно использовать следующую конструкцию в SQL.
+	// SET likes = likes + 1 (или +N). Тогда мы не потеряем обновления.
 	if input.Likes != nil {
 		setPosts = append(setPosts, "likes = ?")
 		fields = append(fields, *input.Likes)
@@ -172,6 +177,8 @@ func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEnti
 	default:
 	}
 
+	// TODO: Надо все запросы посмотреть и проверить нужна ли там пагинация или нет.
+	// У тебя же нет ограничения на количество постов по автору. Что если у автора 10к постов?
 	row, _ := r.storage.Query("SELECT * FROM post WHERE author_id = $1", userId)
 	var posts []postEntity.Post
 	for row.Next() {
@@ -199,6 +206,9 @@ func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (*int, error) {
 		return nil, ctx.Err()
 	default:
 	}
+
+	// TODO: Почему количество лайков по указателю передаем. По умолчанию количество
+	// лайков равно 0 на любом посте. Это не NULL поле.
 
 	post, err := r.GetPostById(ctx, postId)
 	if err != nil {

@@ -19,11 +19,14 @@ func (i *UserImplementation) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Вот ты достаешь параметры и складываешь в структуру где
+	// есть JSON теги. Можно же сделать json.Unmarshal.
 	userData := api.InputUser{
 		Login:    login,
 		Password: pass,
 	}
 
+	// TODO: Нарушаешь границы слоев. Передаешь тип слоя API в слой Service.
 	token, err := i.service.Login(r.Context(), userData)
 
 	if err != nil {

@@ -17,6 +17,9 @@ type UserService struct {
 }
 
 const (
+	// TODO: Что тут значит 1?
+	// TODO: Лучше не хранить секрет в константах проекта. Нужно задавать
+	// его в конфиг файле или env переменной.
 	secretKey = "secretkey1"
 )
 
@@ -42,6 +45,7 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 		Password:  hashPassword,
 	}
 
+	// TODO: Не обрабатывается ошибка.
 	checkUser, _ := s.repo.Get(ctx, userData.Login)
 
 	if checkUser.Login == userInfo.Login {
@@ -53,6 +57,9 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 		return 0, fmt.Errorf("Failed to create user: %w", err)
 	}
 
+	// TODO: У тебя есть if на обработку ошибки. Тут она всегда будет nil.
+	// Стоит это явно показать.
+	// TODO: Тип возвращаемого значения не совпадает с типом ID в структуре userEntity.User.
 	return userCreated, err
 }
 
@@ -129,6 +136,7 @@ func (s *UserService) CheckToken(tokenString string) (string, error) {
 }
 
 func (s *UserService) GetUsers(ctx context.Context) ([]userEntity.User, error) {
+	// TODO: Потенциально можем доставать очень много записей. Нужна пагинация.
 	users, err := s.repo.GetUsers(ctx)
 
 	if err != nil {
