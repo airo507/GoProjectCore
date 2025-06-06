@@ -1,23 +1,28 @@
 export CGO_ENABLED=1
 export GO111MODULE=on
 
-LOCAL_BIN:=$(CURDIR)/bin
+LOCAL_BIN:=${CURDIR}/bin
+MIGRATION_DSN="host=localhost port=$(PG_PORT) dbname=$(DB_NAME) user=$(DB_USER) password=$(DB_PASSWORD)"
+
 
 install-protoc:
 	sudo apt install protobuf-compiler
-	GOBIN=$(LOCAL_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	GOBIN=$(LOCAL_BIN) go install -mod=mod google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	GOBIN=${LOCAL_BIN} go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	GOBIN=${LOCAL_BIN} go install -mod=mod google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	GOBIN=${LOCAL_BIN} go install github.com/pressly/goose/v3/cmd/goose@latest
 
 get-protoc:
 	go get -u google.golang.org/protobuf/cmd/protoc-gen-go
 	go get -u google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
 generate:
-	#make install-protoc
-	#make get-protoc
-	#mkdir gen/blog
+	make install-protoc
+	make get-protoc
+	mkdir gen/blog
 	protoc -I=grpc --go_out=./gen/blog/ --go_opt=paths=source_relative --go-grpc_out=./gen/blog/ --go-grpc_opt=paths=source_relative grpc/blog/blog.proto
 
+migrate:
+	goose -dir ./migrations postgres ${MIGRATION_DSN} up -v
 
 setup:
 	go get github.com/jackc/pgx/v5
@@ -26,8 +31,8 @@ build:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o cmd/app/main.go
 
 
-#docker-build:
-#	CGO_ENABLED=1 docker build -t go-project-core .
+docker-build:
+	CGO_ENABLED=1 docker build -t go-project-core .
 
 compose-up:
 	docker compose up -d --build
