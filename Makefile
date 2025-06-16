@@ -1,8 +1,11 @@
 export CGO_ENABLED=1
 export GO111MODULE=on
+export
+
+include .env
 
 LOCAL_BIN:=${CURDIR}/bin
-MIGRATION_DSN="host=localhost port=$(PG_PORT) dbname=$(DB_NAME) user=$(DB_USER) password=$(DB_PASSWORD)"
+MIGRATION_DSN="host=localhost port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASSWORD}"
 
 
 install-protoc:
@@ -22,6 +25,7 @@ generate:
 	protoc -I=grpc --go_out=./gen/blog/ --go_opt=paths=source_relative --go-grpc_out=./gen/blog/ --go-grpc_opt=paths=source_relative grpc/blog/blog.proto
 
 migrate:
+	@echo "Starting migrations with DSN: host=host.docker.internal port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=***"
 	goose -dir ./migrations postgres ${MIGRATION_DSN} up -v
 
 setup:

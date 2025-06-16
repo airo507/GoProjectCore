@@ -23,6 +23,13 @@ services:
       - "8081:8081"
     depends_on:
       - postgres
+  migration:
+    build:
+      context: .
+      dockerfile: goose.dockerfile
+    restart: on-failure
+    environment:
+      DB_HOST: postgres
 
 volumes:
   pgdata:
