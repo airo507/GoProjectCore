@@ -10,7 +10,6 @@ import (
 )
 
 func (s *ServerPostApi) Create(ctx context.Context, request *blog_proto.CreatePostRequest) (*blog_proto.CreatePostResponse, error) {
-
 	if request.PostInfo.Author == 0 {
 		return nil, status.Error(codes.InvalidArgument, "author id is required")
 	}

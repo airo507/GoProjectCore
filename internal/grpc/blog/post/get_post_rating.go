@@ -8,7 +8,6 @@ import (
 )
 
 func (s *ServerPostApi) GetPostRating(ctx context.Context, request *blog_proto.PostIdRequest) (*blog_proto.PostRatingResponse, error) {
-
 	if request.Id == 0 {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}

@@ -8,7 +8,6 @@ import (
 )
 
 func (s *ServerCommentApi) Delete(ctx context.Context, request *blog_proto.CommentIdRequest) (*blog_proto.DeleteCommentResponse, error) {
-
 	if request.CommentId == 0 {
 		return nil, status.Error(codes.InvalidArgument, "comment id is required")
 	}

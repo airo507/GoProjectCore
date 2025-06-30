@@ -9,7 +9,6 @@ import (
 )
 
 func (s *ServerUserApi) GetUsers(ctx context.Context, request *blog_proto.EmptyUserRequest) (response *blog_proto.UsersResponse, err error) {
-
 	users, err := s.User.GetUsers(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "user table is empty")

@@ -9,13 +9,13 @@ import (
 )
 
 func (s *ServerCommentApi) GetCommentsList(ctx context.Context, message *blog_proto.EmptyCommentMessage) (*blog_proto.CommentsListResponse, error) {
-
 	comments, err := s.Comment.GetCommentsList(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "Failed to get comments list.")
 	}
 
 	commentResult := make([]*blog_proto.Comment, 0, len(comments))
+
 	for _, comment := range comments {
 		commentResult = append(commentResult, &blog_proto.Comment{
 			CommentId: int64(comment.Id),

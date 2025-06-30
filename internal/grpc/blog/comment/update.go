@@ -9,7 +9,6 @@ import (
 )
 
 func (s *ServerCommentApi) Update(ctx context.Context, request *blog_proto.UpdateCommentRequest) (*blog_proto.UpdateCommentResponse, error) {
-
 	if request.CommentId == 0 {
 		return nil, status.Error(codes.InvalidArgument, "comment id is required")
 	}

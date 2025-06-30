@@ -3,13 +3,20 @@ package config
 import (
 	"fmt"
 	"github.com/joho/godotenv"
-	"log/slog"
 	"os"
 )
 
 type EnvConfig struct {
-	Dsn  string
-	Host string
+	Dsn         string
+	Host        string
+	KafkaConfig KafkaConfig
+}
+
+type KafkaConfig struct {
+	KafkaAddr string
+	Topic     string
+	GroupId   string
+	Partition int64
 }
 
 func GetConfig() *EnvConfig {
@@ -26,11 +33,18 @@ func GetConfig() *EnvConfig {
 	dbPort := os.Getenv("DB_PORT")
 	grpcHost := os.Getenv("GRPC_HOST")
 	grpcPort := os.Getenv("GRPC_PORT")
-	slog.Info(dbHost)
+
+	kafkaConfig := KafkaConfig{
+		KafkaAddr: os.Getenv("KAFKA_ADDR"),
+		Topic:     os.Getenv("KAFKA_TOPIC"),
+		GroupId:   os.Getenv("KAFKA_GROUP_ID"),
+		Partition: 0,
+	}
 
 	config := &EnvConfig{
-		Dsn:  fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPassword, dbHost, dbPort, dbName),
-		Host: fmt.Sprintf("%s:%s", grpcHost, grpcPort),
+		Dsn:         fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPassword, dbHost, dbPort, dbName),
+		Host:        fmt.Sprintf("%s:%s", grpcHost, grpcPort),
+		KafkaConfig: kafkaConfig,
 	}
 
 	return config

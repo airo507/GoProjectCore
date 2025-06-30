@@ -2,14 +2,14 @@ package comment
 
 import (
 	"context"
-	blog_proto "github.com/airo507/GoProjectCore/gen/blog/blog"
-	"github.com/airo507/GoProjectCore/internal/api"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	blog_proto "github.com/airo507/GoProjectCore/gen/blog/blog"
+	"github.com/airo507/GoProjectCore/internal/api"
 )
 
 func (s *ServerCommentApi) Create(ctx context.Context, request *blog_proto.CreateCommentRequest) (*blog_proto.CreateCommentResponse, error) {
-
 	if request.Author == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Author is required")
 	}

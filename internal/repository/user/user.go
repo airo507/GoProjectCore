@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
-	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"time"
+
+	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
+	"github.com/jackc/pgx/v5"
 )
 
 type UserRepository interface {
@@ -19,41 +20,30 @@ type UserRepository interface {
 
 type UserRepo struct {
 	storage *sql.DB
+	logger  *slog.Logger
 }
 
-func NewUserRepo(storage *sql.DB) *UserRepo {
+func NewUserRepo(storage *sql.DB, logger *slog.Logger) *UserRepo {
 	return &UserRepo{
 		storage: storage,
+		logger:  logger,
 	}
 }
 
 func (r *UserRepo) Create(ctx context.Context, userData userEntity.User) (int64, error) {
-	select {
-	case <-ctx.Done():
-		return 0, ctx.Err()
-	default:
-	}
-
 	var id int64
+
 	query := "INSERT INTO users (login, first_name, last_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (login) DO NOTHING RETURNING id"
 
 	err := r.storage.QueryRowContext(ctx, query, userData.Login, userData.FirstName, userData.LastName, userData.Email, userData.Password, time.Now(), time.Now()).Scan(&id)
-
 	if err != nil {
-		slog.Error("create error: ", err)
-		return 0, fmt.Errorf("insert error: %v", err)
+		return 0, err
 	}
 
 	return id, nil
 }
 
 func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, error) {
-	select {
-	case <-ctx.Done():
-		return userEntity.User{}, ctx.Err()
-	default:
-	}
-
 	query := "SELECT id, login, first_name, last_name, email, password, created_at, updated_at FROM users WHERE login=$1"
 
 	var user userEntity.User
@@ -70,7 +60,6 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			slog.Error("Failed to find user ", err)
 			return userEntity.User{}, err
 		}
 		return userEntity.User{}, fmt.Errorf("Query error: %v", err)
@@ -80,12 +69,6 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 }
 
 func (r *UserRepo) GetUsers(ctx context.Context) ([]userEntity.User, error) {
-	select {
-	case <-ctx.Done():
-		return []userEntity.User{}, ctx.Err()
-	default:
-	}
-
 	query := "SELECT id, login, first_name, last_name, email, password, created_at, updated_at FROM users WHERE login=$1"
 
 	row, err := r.storage.QueryContext(ctx, query)
@@ -97,7 +80,8 @@ func (r *UserRepo) GetUsers(ctx context.Context) ([]userEntity.User, error) {
 
 	for row.Next() {
 		user := userEntity.User{}
-		err := row.Scan(
+
+		errScan := row.Scan(
 			&user.Id,
 			&user.Login,
 			&user.FirstName,
@@ -107,12 +91,14 @@ func (r *UserRepo) GetUsers(ctx context.Context) ([]userEntity.User, error) {
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		)
-		if err != nil {
-			if err == pgx.ErrNoRows {
-				return nil, fmt.Errorf("Failed to find users", err)
+		if errScan != nil {
+			if errScan == pgx.ErrNoRows {
+				return nil, fmt.Errorf("Failed to find users", errScan)
 			}
 		}
+
 		users = append(users, user)
 	}
+
 	return users, nil
 }

@@ -1,6 +1,14 @@
 package main
 
 import (
+	"context"
+	"google.golang.org/grpc"
+	"log/slog"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/airo507/GoProjectCore/internal/app"
 	"github.com/airo507/GoProjectCore/internal/config"
 	"github.com/airo507/GoProjectCore/internal/grpc/blog"
@@ -11,30 +19,25 @@ import (
 	postService "github.com/airo507/GoProjectCore/internal/service/post"
 	userService "github.com/airo507/GoProjectCore/internal/service/user"
 	"github.com/airo507/GoProjectCore/internal/storage/postgres"
-	"google.golang.org/grpc"
-	"log/slog"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
 	envConfig := config.GetConfig()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	checkError := postgres.CheckDatabase(envConfig.Dsn)
 	if checkError != nil {
-		slog.Error("Database connection failed:", checkError)
+		logger.Error("Database connection failed:", checkError)
 		os.Exit(1)
 	}
 
-	db, err := postgres.New(envConfig.Dsn)
+	db, err := postgres.New(envConfig.Dsn, logger)
 	if err != nil {
-		slog.Error("Create new database failed!", err)
+		logger.Error("Create new database failed!", err)
 		return
 	}
 
-	userRepoData := userRepository.NewUserRepo(db)
+	userRepoData := userRepository.NewUserRepo(db, logger)
 	userServiceData := userService.NewUserService(userRepoData)
 
 	postRepoData := postRepository.NewPostRepo(db)
@@ -48,22 +51,25 @@ func main() {
 
 	lis, err := net.Listen("tcp", ":8081")
 	if err != nil {
-		slog.Error("Listen failed!", err)
+		logger.Error("Listen failed!", err)
 		return
 	}
-	slog.Info("App listening on " + envConfig.Host)
+	logger.Debug("App listening on " + envConfig.Host)
 
-	err = gRPCServer.Serve(lis)
+	go func() {
+		err = gRPCServer.Serve(lis)
+	}()
+
 	if err != nil {
-		slog.Info("Serve failed! Error: %s", err)
+		logger.Error("Serve failed! Error: %s", err)
 		return
 	}
 
-	quit := make(chan os.Signal, 1)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer cancel()
 
-	slog.Info("Shutting down server...")
+	<-ctx.Done()
 
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-	<-quit
-
+	gRPCServer.Stop()
+	logger.Debug("App shutdown.")
 }

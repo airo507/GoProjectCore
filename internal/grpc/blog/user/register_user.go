@@ -9,7 +9,6 @@ import (
 )
 
 func (s *ServerUserApi) RegisterUser(ctx context.Context, request *blog_proto.RegisterUserRequest) (*blog_proto.RegisterUserResponse, error) {
-
 	if request.Info.Login == "" {
 		return nil, status.Error(codes.InvalidArgument, "login is required")
 	}

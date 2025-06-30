@@ -7,14 +7,13 @@ import (
 	"log/slog"
 )
 
-func New(database string) (*sql.DB, error) {
+func New(database string, logger *slog.Logger) (*sql.DB, error) {
 
 	db, err := sql.Open("pgx", database)
 
 	db.Ping()
 	if err != nil {
-		slog.Info("Error opening database %s\n", err)
-		fmt.Printf("Error opening database %s\n", err)
+		logger.Info("Error opening database %s\n", err)
 		return nil, fmt.Errorf("%s", err)
 	}
 

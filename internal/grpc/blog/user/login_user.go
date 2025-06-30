@@ -6,13 +6,9 @@ import (
 	"github.com/airo507/GoProjectCore/internal/api"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log/slog"
 )
 
 func (s *ServerUserApi) LoginUser(ctx context.Context, request *blog_proto.LoginRequest) (*blog_proto.LoginResponse, error) {
-
-	slog.Info(request.GetLogin())
-	slog.Info(request.Password)
 	if request.Login == "" {
 		return nil, status.Error(codes.InvalidArgument, "login is required")
 	}

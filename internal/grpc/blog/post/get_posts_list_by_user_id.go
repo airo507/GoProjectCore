@@ -9,7 +9,6 @@ import (
 )
 
 func (s *ServerPostApi) GetPostsListByUserId(ctx context.Context, request *blog_proto.UserIdRequest) (*blog_proto.PostsListResponse, error) {
-
 	if request.UserId == 0 {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}

@@ -8,7 +8,6 @@ import (
 )
 
 func (s *ServerPostApi) Delete(ctx context.Context, request *blog_proto.PostIdRequest) (*blog_proto.DeletePostResponse, error) {
-
 	if request.Id == 0 {
 		return nil, status.Error(codes.InvalidArgument, "id is required")
 	}

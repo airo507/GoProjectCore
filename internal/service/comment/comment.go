@@ -2,10 +2,11 @@ package comment
 
 import (
 	"context"
+	"time"
+
 	"github.com/airo507/GoProjectCore/internal/api"
 	commentEntity "github.com/airo507/GoProjectCore/internal/entity/comment"
 	commentRepository "github.com/airo507/GoProjectCore/internal/repository/comment"
-	"time"
 )
 
 type CommentServiceInterface interface {
@@ -36,11 +37,11 @@ func NewCommentService(repository commentRepository.CommentRepository) *CommentS
 }
 
 func (s *CommentService) Create(ctx context.Context, input api.CommentInput) (int64, error) {
-
 	createCommentId, err := s.repository.Create(ctx, input)
 	if err != nil {
 		return 0, err
 	}
+
 	return createCommentId, nil
 }
 
@@ -49,6 +50,7 @@ func (s *CommentService) Update(ctx context.Context, commentId int, input api.Co
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -57,11 +59,13 @@ func (s *CommentService) Delete(ctx context.Context, commentId int) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (s *CommentService) GetCommentById(ctx context.Context, commentId int) (CommentResult, error) {
 	commentMessage, err := s.repository.GetCommentById(ctx, commentId)
+
 	commentResult := CommentResult{
 		Id:      commentMessage.Id,
 		Author:  commentMessage.Author,
@@ -82,5 +86,6 @@ func (s *CommentService) GetCommentsList(ctx context.Context) ([]commentEntity.M
 	if err != nil {
 		return []commentEntity.Message{}, err
 	}
+
 	return commentsList, nil
 }
