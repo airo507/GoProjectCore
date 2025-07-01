@@ -37,6 +37,8 @@ func main() {
 		return
 	}
 
+	//kafkaProducer := kafka.NewProducer(context.Background(), envConfig.KafkaConfig, logger)
+
 	userRepoData := userRepository.NewUserRepo(db, logger)
 	userServiceData := userService.NewUserService(userRepoData, envConfig.SecretKey)
 

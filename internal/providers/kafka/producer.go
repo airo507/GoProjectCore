@@ -20,7 +20,7 @@ type KafkaProducer struct {
 	logger   *slog.Logger
 }
 
-func NewProducer(ctx context.Context, kafkaConfig *config.KafkaConfig, logger *slog.Logger) *KafkaProducer {
+func NewProducer(ctx context.Context, kafkaConfig config.KafkaConfig, logger *slog.Logger) *KafkaProducer {
 	conn, err := kafka.DialLeader(ctx, "tcp", kafkaConfig.KafkaAddr, kafkaConfig.Topic, int(kafkaConfig.Partition))
 	if err != nil {
 		return nil
