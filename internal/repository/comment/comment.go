@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/airo507/GoProjectCore/internal/api"
@@ -74,38 +73,17 @@ func (r *CommentRepo) Create(ctx context.Context, input api.CommentInput) (int64
 }
 
 func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.CommentInput) error {
-	index := 1
-	var setComment []string
-	var fields []interface{}
 
-	if input.Author != 0 {
-		setComment = append(setComment, fmt.Sprintf("author_id = $%d", index))
-		fields = append(fields, input.Author)
-		index++
+	var updatedId int
+	if input.Body == "" {
+		return fmt.Errorf("body is empty")
 	}
 
-	if input.PostId != 0 {
-		setComment = append(setComment, fmt.Sprintf("post_id = $%d", index))
-		fields = append(fields, input.PostId)
-		index++
-	}
+	query := fmt.Sprintf("UPDATE comments SET body = $1, updated_at = $2 WHERE id = $3 RETURNING id")
 
-	if input.Body != "" {
-		setComment = append(setComment, fmt.Sprintf("body = $%d", index))
-		fields = append(fields, input.Body)
-		index++
-	}
-
-	setComment = append(setComment, fmt.Sprintf("updated_at = $%d", index))
-	fields = append(fields, time.Now())
-	index++
-	fields = append(fields, commentId)
-
-	query := fmt.Sprintf("UPDATE comments SET %s WHERE id = $%d RETURNING id", strings.Join(setComment, ", "), index)
-
-	err := r.storage.QueryRowContext(ctx, query, fields...).Scan(&input)
+	err := r.storage.QueryRowContext(ctx, query, input.Body, time.Now(), commentId).Scan(&updatedId)
 	if err != nil {
-		return fmt.Errorf("update error: %v", err)
+		return err
 	}
 
 	return nil

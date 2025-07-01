@@ -1,6 +1,0 @@
-env: "local"
-storage_path: "internal/storage/postgres/posts.db"
-http_server:
-  address: "localhost:8081"
-  timeout: 5s
-

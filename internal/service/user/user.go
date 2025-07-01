@@ -20,16 +20,14 @@ type UserServiceInterface interface {
 }
 
 type UserService struct {
-	repo userRepository.UserRepository
+	repo      userRepository.UserRepository
+	secretKey string
 }
 
-const (
-	secretKey = "secretkey1"
-)
-
-func NewUserService(userRepository userRepository.UserRepository) *UserService {
+func NewUserService(userRepository userRepository.UserRepository, secretKey string) *UserService {
 	return &UserService{
-		repo: userRepository,
+		repo:      userRepository,
+		secretKey: secretKey,
 	}
 }
 
@@ -48,7 +46,10 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 		Password:  hashPassword,
 	}
 
-	checkUser, _ := s.repo.Get(ctx, userData.Login)
+	checkUser, err := s.repo.Get(ctx, userData.Login)
+	if err != nil {
+		return 0, err
+	}
 
 	if checkUser.Login == userInfo.Login {
 		return 0, err
@@ -59,7 +60,7 @@ func (s *UserService) Register(ctx context.Context, userInfo api.ResponseUser) (
 		return 0, err
 	}
 
-	return userCreated, err
+	return userCreated, nil
 }
 
 func (s *UserService) Login(ctx context.Context, input api.InputUser) (string, error) {
@@ -109,7 +110,7 @@ func (s *UserService) GenerateJwt(login string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	tokenString, err := token.SignedString([]byte(secretKey))
+	tokenString, err := token.SignedString([]byte(s.secretKey))
 	if err != nil {
 		return "", err
 	}
@@ -127,7 +128,7 @@ func (s *UserService) CheckToken(tokenString string) (string, error) {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return secretKey, nil
+		return s.secretKey, nil
 	})
 	if err != nil || !token.Valid {
 		return "", fmt.Errorf("Token is invalid")

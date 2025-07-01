@@ -9,6 +9,7 @@ import (
 type EnvConfig struct {
 	Dsn         string
 	Host        string
+	SecretKey   string
 	KafkaConfig KafkaConfig
 }
 
@@ -33,6 +34,7 @@ func GetConfig() *EnvConfig {
 	dbPort := os.Getenv("DB_PORT")
 	grpcHost := os.Getenv("GRPC_HOST")
 	grpcPort := os.Getenv("GRPC_PORT")
+	secretKey := os.Getenv("SECRET_KEY")
 
 	kafkaConfig := KafkaConfig{
 		KafkaAddr: os.Getenv("KAFKA_ADDR"),
@@ -44,6 +46,7 @@ func GetConfig() *EnvConfig {
 	config := &EnvConfig{
 		Dsn:         fmt.Sprintf("postgres://%s:%s@%s:%s/%s", dbUser, dbPassword, dbHost, dbPort, dbName),
 		Host:        fmt.Sprintf("%s:%s", grpcHost, grpcPort),
+		SecretKey:   secretKey,
 		KafkaConfig: kafkaConfig,
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/airo507/GoProjectCore/internal/api"
@@ -44,38 +43,22 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 }
 
 func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) error {
-	index := 1
-	var setPosts []string
-	var fields []interface{}
+	var updatedId int
+	var likes string
 
-	if input.Author != 0 {
-		setPosts = append(setPosts, fmt.Sprintf("author_id = $%d", index))
-		fields = append(fields, input.Author)
-		index++
+	if input.Body == "" {
+		return fmt.Errorf("body is empty")
 	}
 
-	if input.Body != "" {
-		setPosts = append(setPosts, fmt.Sprintf("body = $%d", index))
-		fields = append(fields, input.Body)
-		index++
+	if input.Likes > 0 {
+		likes = "likes + 1"
 	}
 
-	if input.Likes != 0 {
-		setPosts = append(setPosts, fmt.Sprintf("likes = $%d", index))
-		fields = append(fields, input.Likes)
-		index++
-	}
+	query := fmt.Sprintf("UPDATE posts SET body = $1, likes = $2, updated_at = $3 WHERE id = $4 RETURNING id")
 
-	setPosts = append(setPosts, fmt.Sprintf("updated_at = $%d", index))
-	fields = append(fields, time.Now())
-	index++
-	fields = append(fields, postId)
-
-	query := fmt.Sprintf("UPDATE posts SET %s WHERE id = $%d RETURNING id", strings.Join(setPosts, ", "), index)
-
-	err := r.storage.QueryRowContext(ctx, query, fields...).Scan(&postId)
+	err := r.storage.QueryRowContext(ctx, query, input.Body, likes, time.Now(), postId).Scan(&updatedId)
 	if err != nil {
-		return fmt.Errorf("update error: %v", err)
+		return err
 	}
 
 	return nil

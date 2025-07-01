@@ -38,7 +38,7 @@ func main() {
 	}
 
 	userRepoData := userRepository.NewUserRepo(db, logger)
-	userServiceData := userService.NewUserService(userRepoData)
+	userServiceData := userService.NewUserService(userRepoData, envConfig.SecretKey)
 
 	postRepoData := postRepository.NewPostRepo(db)
 	postServiceData := postService.NewPostService(postRepoData)
