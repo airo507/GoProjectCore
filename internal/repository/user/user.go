@@ -33,12 +33,20 @@ func NewUserRepo(storage *sql.DB, logger *slog.Logger) *UserRepo {
 func (r *UserRepo) Create(ctx context.Context, userData userEntity.User) (int64, error) {
 	var id int64
 
-	query := "INSERT INTO users (login, first_name, last_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (login) DO NOTHING RETURNING id"
-
-	err := r.storage.QueryRowContext(ctx, query, userData.Login, userData.FirstName, userData.LastName, userData.Email, userData.Password, time.Now(), time.Now()).Scan(&id)
+	tx, err := r.storage.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
+
+	defer tx.Rollback()
+
+	query := "INSERT INTO users (login, first_name, last_name, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (login) DO NOTHING RETURNING id"
+
+	rowErr := r.storage.QueryRowContext(ctx, query, userData.Login, userData.FirstName, userData.LastName, userData.Email, userData.Password, time.Now(), time.Now()).Scan(&id)
+	if rowErr != nil {
+		return 0, rowErr
+	}
+	r.logger.Debug("User Id: ", id)
 
 	return id, nil
 }
@@ -59,9 +67,10 @@ func (r *UserRepo) Get(ctx context.Context, login string) (userEntity.User, erro
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return userEntity.User{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return userEntity.User{}, nil
 		}
+
 		return userEntity.User{}, fmt.Errorf("Query error: %v", err)
 	}
 

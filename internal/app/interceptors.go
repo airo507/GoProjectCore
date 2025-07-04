@@ -7,7 +7,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
-	"log/slog"
 	"strings"
 )
 
@@ -19,7 +18,6 @@ func AuthInterceptor(userService userService.UserServiceInterface) grpc.UnarySer
 		handler grpc.UnaryHandler,
 	) (resp any, err error) {
 
-		slog.Info(info.FullMethod)
 		switch info.FullMethod {
 		case "/blog.UserService/RegisterUser", "/blog.UserService/LoginUser":
 			return handler(ctx, req)
@@ -39,7 +37,7 @@ func AuthInterceptor(userService userService.UserServiceInterface) grpc.UnarySer
 		if !strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
 			return nil, status.Errorf(codes.Unauthenticated, "authorization header is not bearer token")
 		}
-		tokenString = strings.TrimSpace(tokenString[len("bearer"):])
+		tokenString = strings.TrimSpace(tokenString[len("Bearer"):])
 
 		if tokenString == "" {
 			return nil, status.Errorf(codes.Unauthenticated, "authorization token is empty")
