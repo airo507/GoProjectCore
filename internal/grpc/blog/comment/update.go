@@ -19,30 +19,14 @@ func (s *ServerCommentApi) Update(ctx context.Context, request *blog_proto.Updat
 		return nil, status.Error(codes.NotFound, "comment not found")
 	}
 
-	if request.PostId == 0 {
-		return nil, status.Error(codes.InvalidArgument, "post id is required")
-	}
-
-	var postId, authorId, body = 0, 0, ""
-
-	if request.PostId == 0 {
-		postId = int(existComment.PostId)
-	}
-	postId = int(request.PostId)
-
-	if request.Author == 0 {
-		authorId = int(existComment.Author)
-	}
-	authorId = int(request.Author)
-
 	if request.Body == "" {
-		body = existComment.Body
+		return nil, status.Error(codes.NotFound, "body is empty")
 	}
-	body = request.Body
 
+	body := request.Body
 	commentData := api.CommentInput{
-		PostId: postId,
-		Author: authorId,
+		PostId: existComment.PostId,
+		Author: existComment.Author,
 		Body:   body,
 	}
 
@@ -53,8 +37,8 @@ func (s *ServerCommentApi) Update(ctx context.Context, request *blog_proto.Updat
 
 	return &blog_proto.UpdateCommentResponse{
 		CommentId: int64(commentId),
-		PostId:    int64(postId),
-		Author:    int64(authorId),
+		PostId:    int64(existComment.PostId),
+		Author:    int64(existComment.Author),
 		Body:      body,
 	}, nil
 

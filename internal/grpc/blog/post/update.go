@@ -20,21 +20,21 @@ func (s *ServerPostApi) Update(ctx context.Context, request *blog_proto.UpdatePo
 		return nil, status.Error(codes.NotFound, "post not found")
 	}
 
-	var authorId, body = 0, ""
-	if request.Author == 0 {
-		authorId = int(existPost.Author)
-	}
-	authorId = int(request.Author)
-
+	var likes int
 	if request.Body == "" {
-		body = existPost.Body
+		return nil, status.Error(codes.NotFound, "body is empty")
 	}
-	body = request.Body
+	body := request.Body
+
+	if request.Like {
+		likes = existPost.Likes + 1
+	} else {
+		likes = existPost.Likes
+	}
 
 	postData := api.PostInput{
-		Author: authorId,
-		Body:   body,
-		Likes:  0,
+		Body:  body,
+		Likes: int64(likes),
 	}
 
 	err = s.Post.Update(ctx, postId, postData)
@@ -44,7 +44,8 @@ func (s *ServerPostApi) Update(ctx context.Context, request *blog_proto.UpdatePo
 
 	return &blog_proto.UpdatePostResponse{
 		PostId: int64(postId),
-		Author: int64(authorId),
+		Author: existPost.Author,
 		Body:   body,
+		Likes:  int64(likes),
 	}, nil
 }

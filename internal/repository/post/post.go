@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgtype"
 	"time"
 
 	"github.com/airo507/GoProjectCore/internal/api"
@@ -34,7 +35,8 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 	var id int64
 	query := "INSERT INTO posts (author_id, body, likes, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 
-	err := r.storage.QueryRowContext(ctx, query, post.Author, post.Body, nil, time.Now(), time.Now()).Scan(&id)
+	authorId := pgtype.Int4{Int32: int32(post.Author), Valid: true}
+	err := r.storage.QueryRowContext(ctx, query, authorId, post.Body, 0, time.Now(), time.Now()).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -44,15 +46,7 @@ func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, err
 
 func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) error {
 	var updatedId int
-	var likes string
-
-	if input.Body == "" {
-		return fmt.Errorf("body is empty")
-	}
-
-	if input.Likes > 0 {
-		likes = "likes + 1"
-	}
+	likes := pgtype.Int4{Int32: int32(input.Likes), Valid: true}
 
 	query := fmt.Sprintf("UPDATE posts SET body = $1, likes = $2, updated_at = $3 WHERE id = $4 RETURNING id")
 
@@ -67,9 +61,18 @@ func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) 
 func (r *PostRepo) Delete(ctx context.Context, postId int) error {
 	query := "DELETE FROM posts WHERE id = $1"
 
-	err := r.storage.QueryRowContext(ctx, query, postId).Scan(&postId)
+	result, err := r.storage.ExecContext(ctx, query, postId)
 	if err != nil {
-		return fmt.Errorf("Failed to delete post: %v", err)
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("Post with id %d not found", postId)
 	}
 
 	return nil
@@ -125,7 +128,7 @@ func (r *PostRepo) GetPostById(ctx context.Context, postId int) (postEntity.Post
 		&post.Updated,
 	)
 	if err != nil {
-		return postEntity.Post{}, fmt.Errorf("failed to scan row: %v", err)
+		return postEntity.Post{}, err
 	}
 
 	return post, nil

@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: blog/blog.proto
 
-package blog_proto
+package blog
 
 import (
 	context "context"

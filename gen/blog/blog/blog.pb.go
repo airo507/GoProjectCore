@@ -4,7 +4,7 @@
 // 	protoc        v3.12.4
 // source: blog/blog.proto
 
-package blog_proto
+package blog
 
 import (
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
@@ -761,7 +761,7 @@ func (x *CreatePostResponse) GetPostId() int64 {
 type UpdatePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PostId        int64                  `protobuf:"varint,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	Author        int64                  `protobuf:"varint,2,opt,name=author,proto3" json:"author,omitempty"`
+	Like          bool                   `protobuf:"varint,2,opt,name=like,proto3" json:"like,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -804,11 +804,11 @@ func (x *UpdatePostRequest) GetPostId() int64 {
 	return 0
 }
 
-func (x *UpdatePostRequest) GetAuthor() int64 {
+func (x *UpdatePostRequest) GetLike() bool {
 	if x != nil {
-		return x.Author
+		return x.Like
 	}
-	return 0
+	return false
 }
 
 func (x *UpdatePostRequest) GetBody() string {
@@ -823,6 +823,7 @@ type UpdatePostResponse struct {
 	PostId        int64                  `protobuf:"varint,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
 	Author        int64                  `protobuf:"varint,2,opt,name=author,proto3" json:"author,omitempty"`
 	Body          string                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	Likes         int64                  `protobuf:"varint,4,opt,name=likes,proto3" json:"likes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -876,6 +877,13 @@ func (x *UpdatePostResponse) GetBody() string {
 		return x.Body
 	}
 	return ""
+}
+
+func (x *UpdatePostResponse) GetLikes() int64 {
+	if x != nil {
+		return x.Likes
+	}
+	return 0
 }
 
 type DeletePostResponse struct {
@@ -1325,8 +1333,6 @@ func (x *CreateCommentResponse) GetCommentId() int64 {
 type UpdateCommentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CommentId     int64                  `protobuf:"varint,1,opt,name=comment_id,json=commentId,proto3" json:"comment_id,omitempty"`
-	PostId        int64                  `protobuf:"varint,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
-	Author        int64                  `protobuf:"varint,3,opt,name=author,proto3" json:"author,omitempty"`
 	Body          string                 `protobuf:"bytes,4,opt,name=body,proto3" json:"body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1365,20 +1371,6 @@ func (*UpdateCommentRequest) Descriptor() ([]byte, []int) {
 func (x *UpdateCommentRequest) GetCommentId() int64 {
 	if x != nil {
 		return x.CommentId
-	}
-	return 0
-}
-
-func (x *UpdateCommentRequest) GetPostId() int64 {
-	if x != nil {
-		return x.PostId
-	}
-	return 0
-}
-
-func (x *UpdateCommentRequest) GetAuthor() int64 {
-	if x != nil {
-		return x.Author
 	}
 	return 0
 }
@@ -1686,15 +1678,16 @@ const file_blog_blog_proto_rawDesc = "" +
 	"\x11CreatePostRequest\x12+\n" +
 	"\tpost_info\x18\x01 \x01(\v2\x0e.blog.PostInfoR\bpostInfo\"-\n" +
 	"\x12CreatePostResponse\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\x03R\x06postId\"X\n" +
+	"\apost_id\x18\x01 \x01(\x03R\x06postId\"T\n" +
 	"\x11UpdatePostRequest\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\x03R\x06postId\x12\x16\n" +
-	"\x06author\x18\x02 \x01(\x03R\x06author\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\tR\x04body\"Y\n" +
+	"\apost_id\x18\x01 \x01(\x03R\x06postId\x12\x12\n" +
+	"\x04like\x18\x02 \x01(\bR\x04like\x12\x12\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\"o\n" +
 	"\x12UpdatePostResponse\x12\x17\n" +
 	"\apost_id\x18\x01 \x01(\x03R\x06postId\x12\x16\n" +
 	"\x06author\x18\x02 \x01(\x03R\x06author\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\tR\x04body\",\n" +
+	"\x04body\x18\x03 \x01(\tR\x04body\x12\x14\n" +
+	"\x05likes\x18\x04 \x01(\x03R\x05likes\",\n" +
 	"\x12DeletePostResponse\x12\x16\n" +
 	"\x06result\x18\x01 \x01(\bR\x06result\".\n" +
 	"\fPostResponse\x12\x1e\n" +
@@ -1724,12 +1717,10 @@ const file_blog_blog_proto_rawDesc = "" +
 	"\x04body\x18\x03 \x01(\tR\x04body\"6\n" +
 	"\x15CreateCommentResponse\x12\x1d\n" +
 	"\n" +
-	"comment_id\x18\x01 \x01(\x03R\tcommentId\"z\n" +
+	"comment_id\x18\x01 \x01(\x03R\tcommentId\"I\n" +
 	"\x14UpdateCommentRequest\x12\x1d\n" +
 	"\n" +
-	"comment_id\x18\x01 \x01(\x03R\tcommentId\x12\x17\n" +
-	"\apost_id\x18\x02 \x01(\x03R\x06postId\x12\x16\n" +
-	"\x06author\x18\x03 \x01(\x03R\x06author\x12\x12\n" +
+	"comment_id\x18\x01 \x01(\x03R\tcommentId\x12\x12\n" +
 	"\x04body\x18\x04 \x01(\tR\x04body\"{\n" +
 	"\x15UpdateCommentResponse\x12\x1d\n" +
 	"\n" +
@@ -1763,7 +1754,7 @@ const file_blog_blog_proto_rawDesc = "" +
 	"\x06Update\x12\x1a.blog.UpdateCommentRequest\x1a\x1b.blog.UpdateCommentResponse\x12=\n" +
 	"\x06Delete\x12\x16.blog.CommentIdRequest\x1a\x1b.blog.DeleteCommentResponse\x12?\n" +
 	"\x0eGetCommentById\x12\x16.blog.CommentIdRequest\x1a\x15.blog.CommentResponse\x12H\n" +
-	"\x0fGetCommentsList\x12\x19.blog.EmptyCommentMessage\x1a\x1a.blog.CommentsListResponseB;Z9github.com/airo507/GoProjectCore/grpc/blog/pkg/blog.protob\x06proto3"
+	"\x0fGetCommentsList\x12\x19.blog.EmptyCommentMessage\x1a\x1a.blog.CommentsListResponseB5Z3github.com/airo507/GoProjectCore/grpc/blog/pkg;blogb\x06proto3"
 
 var (
 	file_blog_blog_proto_rawDescOnce sync.Once

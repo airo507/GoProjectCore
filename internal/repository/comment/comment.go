@@ -73,11 +73,7 @@ func (r *CommentRepo) Create(ctx context.Context, input api.CommentInput) (int64
 }
 
 func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.CommentInput) error {
-
 	var updatedId int
-	if input.Body == "" {
-		return fmt.Errorf("body is empty")
-	}
 
 	query := fmt.Sprintf("UPDATE comments SET body = $1, updated_at = $2 WHERE id = $3 RETURNING id")
 
@@ -92,9 +88,18 @@ func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.Comme
 func (r *CommentRepo) Delete(ctx context.Context, commentId int) error {
 	query := "DELETE FROM comments WHERE id = $1"
 
-	err := r.storage.QueryRowContext(ctx, query, commentId).Scan(&commentId)
+	result, err := r.storage.ExecContext(ctx, query, commentId)
 	if err != nil {
-		return fmt.Errorf("failed to delete comment: %v", err)
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("comment id %d not found", commentId)
 	}
 
 	return nil

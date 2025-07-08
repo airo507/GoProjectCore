@@ -105,7 +105,7 @@ func (s *UserService) CheckPassword(password string, hash string) bool {
 func (s *UserService) GenerateJwt(login string) (string, error) {
 	claims := jwt.MapClaims{
 		"login": login,
-		"exp":   time.Now().Add(time.Hour * 24).Unix(),
+		"exp":   time.Now().UTC().Add(time.Hour * 24).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -124,14 +124,15 @@ func (s *UserService) CheckToken(tokenString string) (string, error) {
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return s.secretKey, nil
+		return []byte(s.secretKey), nil
 	})
+
 	if err != nil || !token.Valid {
-		return "", fmt.Errorf("Token is invalid")
+		return "", err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
@@ -139,7 +140,12 @@ func (s *UserService) CheckToken(tokenString string) (string, error) {
 		return "", fmt.Errorf("Token claims are invalid")
 	}
 
-	return claims["login"].(string), nil
+	login, ok := claims["login"].(string)
+	if !ok {
+		return "", fmt.Errorf("login claim missing")
+	}
+
+	return login, nil
 }
 
 func (s *UserService) GetUsers(ctx context.Context) ([]userEntity.User, error) {

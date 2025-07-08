@@ -8,7 +8,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (s *ServerPostApi) GetPostList(ctx context.Context, request *blog_proto.EmptyPostRequest) (*blog_proto.PostsListResponse, error) {
+func (s *ServerPostApi) GetPostsList(ctx context.Context, message *blog_proto.EmptyPostRequest) (*blog_proto.PostsListResponse, error) {
 	posts, err := s.Post.GetPostList(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "Failed to get post list.")

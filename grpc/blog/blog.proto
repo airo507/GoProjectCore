@@ -94,7 +94,7 @@ message CreatePostResponse {
 
 message UpdatePostRequest {
   int64 post_id = 1;
-  int64 author = 2;
+  bool like = 2;
   string body = 3;
 }
 
@@ -102,6 +102,7 @@ message UpdatePostResponse {
   int64 post_id = 1;
   int64 author = 2;
   string body = 3;
+  int64 likes = 4;
 }
 
 
@@ -156,8 +157,6 @@ message CreateCommentResponse{
 
 message UpdateCommentRequest{
   int64 comment_id = 1;
-  int64 post_id = 2;
-  int64 author = 3;
   string body = 4;
 };
 
