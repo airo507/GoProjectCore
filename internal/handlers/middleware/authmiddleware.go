@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/airo507/GoProjectCore/internal/api/dto/response"
 	userService "github.com/airo507/GoProjectCore/internal/service/user"
-	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -24,7 +23,6 @@ func AuthMiddleware(service userService.UserServiceInterface) func(http.Handler)
 					})
 					return
 				}
-				slog.Info("auth header: ", authHeader)
 
 				if !strings.HasPrefix(authHeader, "Bearer ") {
 					w.WriteHeader(http.StatusUnauthorized)
@@ -37,7 +35,6 @@ func AuthMiddleware(service userService.UserServiceInterface) func(http.Handler)
 
 				tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 				tokenString = strings.TrimSpace(tokenString)
-				slog.Info("token string: ", tokenString)
 
 				if tokenString == "" {
 					w.WriteHeader(http.StatusUnauthorized)
