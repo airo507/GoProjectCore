@@ -1,0 +1,58 @@
+package post
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/airo507/GoProjectCore/internal/api/dto/response"
+	"github.com/go-chi/chi/v5"
+	"net/http"
+	"strconv"
+)
+
+func (i *PostImplementation) GetPostRating(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+
+	id := chi.URLParam(r, "id")
+
+	postId, err := strconv.Atoi(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(response.DefaultResponse{
+			Code:    response.NotFound,
+			Message: "failed to read post id",
+		})
+		return
+	}
+
+	if postId <= 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(response.DefaultResponse{
+			Code:    response.InvalidRequest,
+			Message: "post id is empty",
+		})
+		return
+	}
+
+	likeCount, err := i.service.GetPostRating(r.Context(), postId)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(response.DefaultResponse{
+			Code:    response.NotFound,
+			Message: "Posts rating not found",
+		})
+		return
+	}
+
+	var postsResponse []response.Post
+	postsResponse = append(postsResponse, response.Post{
+		PostId: int64(postId),
+		Likes:  likeCount,
+	})
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response.ResponsePost{
+		Message: fmt.Sprintf("Post rating for post id %d is %d", postId, likeCount),
+		Code:    http.StatusCreated,
+		Posts:   postsResponse,
+	})
+}

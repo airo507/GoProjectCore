@@ -4,21 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/airo507/GoProjectCore/internal/api"
-	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
-	"log/slog"
-	"strings"
+	"github.com/jackc/pgx/v5/pgtype"
 	"time"
+
+	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
 )
 
 type PostRepository interface {
 	Create(ctx context.Context, post postEntity.Post) (int64, error)
-	Update(ctx context.Context, postId int, input api.PostInput) error
+	Update(ctx context.Context, postId int, input postEntity.Post) error
 	Delete(ctx context.Context, postId int) error
-	GetPosts(ctx context.Context) (map[int]postEntity.Post, error)
+	GetPosts(ctx context.Context) ([]postEntity.Post, error)
 	GetPostById(ctx context.Context, postId int) (postEntity.Post, error)
 	GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error)
-	GetPostLikes(ctx context.Context, postId int) (*int, error)
+	GetPostLikes(ctx context.Context, postId int) (int, error)
 }
 
 type PostRepo struct {
@@ -32,97 +31,59 @@ func NewPostRepo(storage *sql.DB) *PostRepo {
 }
 
 func (r *PostRepo) Create(ctx context.Context, post postEntity.Post) (int64, error) {
-	select {
-	case <-ctx.Done():
-		return 0, ctx.Err()
-	default:
-	}
-
 	var id int64
 	query := "INSERT INTO posts (author_id, body, likes, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 
-	err := r.storage.QueryRowContext(ctx, query, post.Author, post.Body, nil, time.Now(), time.Now()).Scan(&id)
-
+	authorId := pgtype.Int4{Int32: int32(post.Author), Valid: true}
+	err := r.storage.QueryRowContext(ctx, query, authorId, post.Body, 0, time.Now(), time.Now()).Scan(&id)
 	if err != nil {
-		slog.Error("create error: ", err)
-		return 0, fmt.Errorf("sql error: %v", err)
+		return 0, err
 	}
 
 	return id, nil
 }
 
-func (r *PostRepo) Update(ctx context.Context, postId int, input api.PostInput) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-	index := 1
+func (r *PostRepo) Update(ctx context.Context, postId int, input postEntity.Post) error {
+	var updatedId int
 
-	var setPosts []string
-	var fields []interface{}
-	if input.Author != nil {
-		setPosts = append(setPosts, fmt.Sprintf("author_id = $%d", index))
-		fields = append(fields, *input.Author)
-		index++
-	}
-	if input.Body != nil {
-		setPosts = append(setPosts, fmt.Sprintf("body = $%d", index))
-		fields = append(fields, *input.Body)
-		index++
-	}
-	if input.Likes != nil {
-		setPosts = append(setPosts, fmt.Sprintf("likes = $%d", index))
-		fields = append(fields, *input.Likes)
-		index++
-	}
+	query := fmt.Sprintf("UPDATE posts SET body = $1, likes = likes + CASE WHEN $2 THEN 1 ELSE 0 END, updated_at = $3 WHERE id = $4 RETURNING id")
 
-	setPosts = append(setPosts, fmt.Sprintf("updated_at = $%d", index))
-	fields = append(fields, time.Now())
-	index++
-	fields = append(fields, postId)
-
-	query := fmt.Sprintf("UPDATE posts SET %s WHERE id = $%d RETURNING id", strings.Join(setPosts, ", "), index)
-
-	err := r.storage.QueryRowContext(ctx, query, fields...).Scan(&postId)
+	err := r.storage.QueryRowContext(ctx, query, input.Body, input.Liked, time.Now(), postId).Scan(&updatedId)
 	if err != nil {
-		return fmt.Errorf("update error: %v", err)
+		return err
 	}
 
 	return nil
 }
 
 func (r *PostRepo) Delete(ctx context.Context, postId int) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
+	query := "DELETE FROM posts WHERE id = $1"
+
+	result, err := r.storage.ExecContext(ctx, query, postId)
+	if err != nil {
+		return err
 	}
 
-	query := "DELETE FROM posts WHERE id = $1"
-	err := r.storage.QueryRowContext(ctx, query, postId).Scan(&postId)
-
+	rows, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("Failed to delete post: %v", err)
+		return err
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("Post with id %d not found", postId)
 	}
 
 	return nil
 }
 
-func (r *PostRepo) GetPosts(ctx context.Context) (map[int]postEntity.Post, error) {
-	select {
-	case <-ctx.Done():
-		return map[int]postEntity.Post{}, ctx.Err()
-	default:
-	}
-
+func (r *PostRepo) GetPosts(ctx context.Context) ([]postEntity.Post, error) {
 	query := "SELECT * FROM posts"
 
 	row, err := r.storage.QueryContext(ctx, query)
 	if err != nil {
-		return map[int]postEntity.Post{}, ctx.Err()
+		return []postEntity.Post{}, ctx.Err()
 	}
-	posts := map[int]postEntity.Post{}
+	posts := []postEntity.Post{}
 
 	for row.Next() {
 		post := postEntity.Post{}
@@ -135,27 +96,25 @@ func (r *PostRepo) GetPosts(ctx context.Context) (map[int]postEntity.Post, error
 			&post.Updated,
 		)
 		if err != nil {
-			return map[int]postEntity.Post{}, fmt.Errorf("failed to scan row: %v", err)
+			return []postEntity.Post{}, fmt.Errorf("failed to scan row: %v", err)
 		}
-		posts[post.Id] = post
+
+		posts = append(posts, post)
 	}
 
 	if err = row.Err(); err != nil {
-		return map[int]postEntity.Post{}, fmt.Errorf("Rows error: %v", err)
+		return []postEntity.Post{}, fmt.Errorf("Rows error: %v", err)
 	}
+
 	return posts, nil
 }
 
 func (r *PostRepo) GetPostById(ctx context.Context, postId int) (postEntity.Post, error) {
-	select {
-	case <-ctx.Done():
-		return postEntity.Post{}, ctx.Err()
-	default:
-	}
-
 	query := "SELECT * FROM posts WHERE id = $1"
 	row := r.storage.QueryRowContext(ctx, query, postId)
+
 	post := postEntity.Post{}
+
 	err := row.Scan(
 		&post.Id,
 		&post.Author,
@@ -165,24 +124,20 @@ func (r *PostRepo) GetPostById(ctx context.Context, postId int) (postEntity.Post
 		&post.Updated,
 	)
 	if err != nil {
-		return postEntity.Post{}, fmt.Errorf("failed to scan row: %v", err)
+		return postEntity.Post{}, err
 	}
 
 	return post, nil
 }
 
 func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEntity.Post, error) {
-	select {
-	case <-ctx.Done():
-		return []postEntity.Post{}, ctx.Err()
-	default:
-	}
-
 	query := "SELECT * FROM posts WHERE author_id = $1"
 	row, _ := r.storage.QueryContext(ctx, query, userId)
 	var posts []postEntity.Post
+
 	for row.Next() {
 		post := postEntity.Post{}
+
 		err := row.Scan(
 			&post.Id,
 			&post.Author,
@@ -194,23 +149,19 @@ func (r *PostRepo) GetPostsByUserId(ctx context.Context, userId int) ([]postEnti
 		if err != nil {
 			return []postEntity.Post{}, fmt.Errorf("failed to scan row: %v", err)
 		}
+
 		posts = append(posts, post)
 	}
 
 	return posts, nil
 }
 
-func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (*int, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
-	}
-
+func (r *PostRepo) GetPostLikes(ctx context.Context, postId int) (int, error) {
 	post, err := r.GetPostById(ctx, postId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get post likes: %v", err)
+		return 0, fmt.Errorf("failed to get post likes: %v", err)
 	}
+
 	likes := post.Likes
 
 	return likes, nil
