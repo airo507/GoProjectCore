@@ -7,16 +7,30 @@ import (
 	commentEntity "github.com/airo507/GoProjectCore/internal/entity/comment"
 	postEntity "github.com/airo507/GoProjectCore/internal/entity/post"
 	userEntity "github.com/airo507/GoProjectCore/internal/entity/user"
-	comment "github.com/airo507/GoProjectCore/internal/repository/comment"
+	"github.com/airo507/GoProjectCore/internal/repository/comment"
 	"github.com/airo507/GoProjectCore/internal/repository/post"
 	"github.com/airo507/GoProjectCore/internal/repository/user"
 )
+
+// TODO: Концептуально интерфейс верно описан, но мне привычен другой вариант его использования.
+// В замечаниях к Code Review на go.dev есть рекомендация по использованию интерфейсов. В ней говорится,
+// что определять интерфейс нужно в пакете, который его использует. В пакете, который реализует интерфейс,
+// стоит возвращать значение (T or *T).
+// В твоем случае репозиторий используется в service пакете, то там и стоит определить интерфейс.
+// https://go.dev/wiki/CodeReviewComments#interfaces
+//
+// Само комьюнити еще не определилось и определяет интерфейсы по разному. Кому-то нравится делать как сделал ты.
 
 type Userable interface {
 	Create(ctx context.Context, userData userEntity.User) (int64, error)
 	Get(ctx context.Context, login string) (userEntity.User, error)
 	GetUsers(ctx context.Context) ([]userEntity.User, error)
 }
+
+// TODO: Нейминг похож на что-то из ООП мира и не отражает действительности.
+// Такой нейминг применяется к самому объекту или какой-то его части.
+// А ты описываешь что-то не относящееся к объекту напрямую, оно просто
+// работает с объектом.
 
 type Postable interface {
 	Create(ctx context.Context, post postEntity.Post) (int64, error)
@@ -35,6 +49,8 @@ type Commentable interface {
 	Update(ctx context.Context, commentId int, input api.CommentInput) error
 	GetCommentById(ctx context.Context, commentId int) (commentEntity.Message, error)
 }
+
+// TODO: Тоже самое что и в ../app/implementation.go. Не вижу смысла делать общую структуру.
 
 type Repository struct {
 	Auth    Userable

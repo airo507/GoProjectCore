@@ -7,6 +7,8 @@ import (
 	"github.com/airo507/GoProjectCore/internal/repository"
 )
 
+// TODO: Вот тут можно определить интерфейс PostRepository и использовать его в этом пакете.
+
 type PostService struct {
 	repo repository.Postable
 }

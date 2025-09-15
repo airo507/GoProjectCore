@@ -29,6 +29,9 @@ func (i *CommentImplementation) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+	// TODO: Для ответа стоит определить структур, которую ты заполнишь и потом
+	// передаешь в Encode.
+	// TODO: Спроецируй на весь проект мои замечания. Повторяться не буду.
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Comment deleted",
 	})

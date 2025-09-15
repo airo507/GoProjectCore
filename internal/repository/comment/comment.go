@@ -23,12 +23,21 @@ func NewCommentRepo(storage *sql.DB) *CommentRepo {
 }
 
 func (r CommentRepo) GetComments(ctx context.Context) ([]comment.Message, error) {
+	// TODO: Тут можно быть уверенным, что r.storage.QueryContext проверит контекст,
+	// поэтому тебе сразу делать это не нужно. Такой код можно писать в фоновых джобах.
+	// Где ты в бесконечном цикле ты будешь на каждой итерации проверять контекст.
 	select {
 	case <-ctx.Done():
 		return []comment.Message{}, ctx.Err()
 	default:
 	}
 
+	// TODO: Далее весь код написан слитно. Можно явно выделить логические блоки.
+	// - Выполнение запроса.
+	// - Чтение результата и преобразование.
+
+	// TODO: Слишком много комментариев достаем. Без фильтров по посту, пользователю или пагинации
+	// мы будем отдавать всю таблицу в ответе. Что будет, если комментариев 1 миллион или больше?
 	rows, err := r.storage.QueryContext(ctx, "SELECT * FROM comment")
 	if err != nil {
 		return []comment.Message{}, fmt.Errorf("Error to find comments: %w", err)
@@ -56,6 +65,7 @@ func (r CommentRepo) GetComments(ctx context.Context) ([]comment.Message, error)
 }
 
 func (r *CommentRepo) Create(ctx context.Context, input api.CommentInput) (int64, error) {
+	// TODO: Не обязательно проверять тут это явно. Как и везде в проекте.
 	select {
 	case <-ctx.Done():
 		return 0, ctx.Err()
@@ -88,6 +98,9 @@ func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.Comme
 	default:
 	}
 
+	// TODO: Обновлять ключи внешние чаще всего ошибка.
+	// Тут у тебя может меняться только Body и оно должно быть не пустым в таком запросе.
+
 	var setComment []string
 	var fields []interface{}
 	if input.Author != nil {
@@ -107,6 +120,8 @@ func (r *CommentRepo) Update(ctx context.Context, commentId int, input api.Comme
 	fields = append(fields, time.Now())
 	fields = append(fields, commentId)
 
+	// TODO: Не стоит запросы строить через fmt.Sprintf. Ты подвержен в таком случае SQL инъекциям.
+	// Можешь почитать про fmt.Sprintf и SQL инъекции.
 	query := fmt.Sprintf("UPDATE comment SET %s WHERE id = ?", strings.Join(setComment, ", "))
 
 	stmt, err := r.storage.Prepare(query)
